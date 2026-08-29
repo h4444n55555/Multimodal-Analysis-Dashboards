@@ -1,0 +1,9 @@
+# CMS50E SpO2 capture + dashboard dependencies.
+# pyserial alone is enough for the command-line capture (stream_capture.py);
+# the rest power the Streamlit dashboard and its analysis (dashboard.py).
+pyserial>=3.5
+numpy>=1.26
+pandas>=2.0
+scipy>=1.11
+streamlit>=1.49
+plotly>=5.20

@@ -1,0 +1,6 @@
+website/
+.claude/
+__pycache__/
+*.pyc
+.venv/
+*.log

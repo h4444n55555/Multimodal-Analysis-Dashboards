@@ -1,0 +1,9 @@
+flyr>=3.2.0
+numpy>=1.24
+pillow>=10.0
+pandas>=2.0
+tqdm>=4.65
+streamlit>=1.62
+matplotlib>=3.8
+flirpy>=0.6.0
+opencv-python>=4.9
