@@ -1,0 +1,167 @@
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.stepBar {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.stepDone .stepBar {
+  background: linear-gradient(90deg, var(--rose), var(--steel));
+}
+
+.stepLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* takes the spare height so the capture screen always fills the device */
+.focus {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  text-align: center;
+  gap: 12px;
+  padding: 24px 20px;
+}
+
+.signals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.guidance {
+  width: 100%;
+  margin-top: 12px;
+  padding: 16px;
+}
+
+.instruction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.signal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.signalDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.signalValue {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.doneActions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.doneActions button:first-child {
+  max-width: 280px;
+}
+
+.fallback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.fallback strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.cancel {
+  align-self: center;
+}
+
+@container device (max-width: 620px) {
+  /* four short bars on one row rather than a two-row tracker */
+  .steps {
+    gap: 6px;
+  }
+
+  .stepLabel {
+    overflow: hidden;
+    font-size: 8.5px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .focus {
+    gap: 8px;
+    padding: 16px;
+  }
+
+  .guidance {
+    margin-top: 4px;
+    padding: 12px;
+  }
+
+  .signals {
+    gap: 7px;
+  }
+
+  .signal {
+    padding: 9px 10px;
+  }
+
+  .fallback {
+    justify-content: flex-start;
+  }
+}
+
+/* short phones: keep the countdown, instruction and signals; drop the extras */
+@container device (max-width: 620px) and (max-height: 740px) {
+  .guidance :global(.muted),
+  .signalsLabel {
+    display: none;
+  }
+
+  /* the optional-ECG notice is informational only */
+  .fallbackRow {
+    display: none !important;
+  }
+
+  .signal {
+    padding: 7px 9px;
+  }
+}

@@ -1,0 +1,196 @@
+% Lab 7 report — two columns, short.
+% Results marked \todo{} are filled in from the user-testing forms.
+% Compile: pdflatex test-report.tex
+
+\documentclass[10pt,a4paper,twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.7cm,columnsep=0.7cm]{geometry}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage[table]{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+
+\titlespacing*{\section}{0pt}{8pt}{3pt}
+\titlespacing*{\subsection}{0pt}{6pt}{2pt}
+\setlist{itemsep=1pt,topsep=2pt,leftmargin=*}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.15}
+\raggedbottom
+
+\newcommand{\todo}[1]{\textcolor{red!70!black}{\textbf{[#1]}}}
+\newcommand{\blank}{\rule{0.7cm}{0.4pt}}
+\newcommand{\fail}{\textcolor{red!70!black}{\textbf{Fail}}}
+\newcommand{\partres}{\textcolor{orange!80!black}{\textbf{Part.}}}
+\newcommand{\pass}{\textcolor{green!45!black}{\textbf{Pass}}}
+
+\title{\vspace{-1.2cm}\textbf{Lab 7 Report: Usability Evaluation}\\[2pt]
+  \large MMAC Study Hub and Aura Screen}
+\author{Nongmaithem Hans \quad Himanshu Patel}
+\date{\vspace{-0.4cm}}
+
+\begin{document}
+\maketitle
+
+%---------------------------------------------------------------------
+\section{Introduction}
+We evaluated two products from the Multimodal Affective Computing (MMAC) study.
+The \textbf{Study Hub} is a website that introduces the study and showcases its
+thermal and ECG data in interactive dashboards. \textbf{Aura Screen} is a patient
+health-screening app for phones and screening kiosks: sign up, scan at a station,
+read the report.
+
+Three problems drove this evaluation. Aura Screen was built for a desktop browser,
+so its phone/kiosk view could only be shown through browser developer tools, and
+screens needed scrolling. The hub linked to separate Streamlit sensor dashboards
+that stopped launching after a while because of deprecated dependencies. And the
+project's goal moved from \emph{recording} data to \emph{showcasing} it, which the
+recording dashboards did not fit.
+
+%---------------------------------------------------------------------
+\section{Test plan}
+\textbf{Tasks.}
+\begin{itemize}
+  \item \textbf{T1 (Aura Screen, phone):} create an account, finish onboarding,
+    start a scan and read your heart rate on the report.
+  \item \textbf{T2 (Study Hub, laptop):} find the ECG data, compare heart rate at rest
+    vs city driving, and start a data-access request.
+\end{itemize}
+T1 is the app's core end-to-end journey; T2 covers the hub's two jobs, showing data
+and controlling its release, and requires reading a chart.
+
+\textbf{Users.} Five people from outside the team: non-technical users (closest to
+patients) and technical students (closest to researchers).
+
+\textbf{Procedure.} About 12 minutes each: consent, a think-aloud warm-up, T1, T2,
+the SUS questionnaire and two debrief questions. One of us facilitates; the other
+observes and fills in the test form.
+
+\textbf{Metrics.} Completion (effectiveness), time on task (efficiency), errors
+(where the design fails), think-aloud confusion points (why), and SUS (standard
+satisfaction score; 68 is average).
+
+%---------------------------------------------------------------------
+\section{Findings}
+\subsection{User testing}
+\begin{center}\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & \multicolumn{2}{c}{T1 Aura Screen} & \multicolumn{2}{c}{T2 Study Hub} \\
+\cmidrule(lr){2-3}\cmidrule(l){4-5}
+ & Done & Time (s) & Done & Time (s) \\
+\midrule
+P1 & \blank & \blank & \blank & \blank \\
+P2 & \blank & \blank & \blank & \blank \\
+P3 & \blank & \blank & \blank & \blank \\
+P4 & \blank & \blank & \blank & \blank \\
+P5 & \blank & \blank & \blank & \blank \\
+\midrule
+Rate / mean & \blank\,/5 & \blank & \blank\,/5 & \blank \\
+Errors (mean) & \multicolumn{2}{c}{\blank} & \multicolumn{2}{c}{\blank} \\
+\bottomrule
+\end{tabular}
+\end{center}
+Mean SUS: \todo{from forms}. Confusion points: \todo{from forms}.
+
+\subsection{Heuristic evaluation}
+Severity: 0 none, 1 cosmetic, 2 minor, 3 major, 4 catastrophe. A = Aura Screen,
+W = website. H1 system status, H2 real world, H4 consistency, H5 error prevention,
+H6 recognition, H7 flexibility, H8 minimalist design, H9 error recovery, H10 help.
+
+\begin{center}\small
+\begin{tabularx}{\columnwidth}{@{}lXlc@{}}
+\toprule
+\multicolumn{4}{@{}l}{\textbf{Aura Screen}} \\
+\midrule
+A1 & Phone/kiosk view only reachable through browser dev tools. & H7, H4 & \textbf{3} \\
+A2 & Core screens scrolled on a phone (e.g.\ Scan Hub +454\,px on 390$\times$844). &
+  H8 & \textbf{3} \\
+A3 & Report: third heart-rate tile cut off at phone width. & H8 & \textbf{3} \\
+A4 & Navigation at the top, out of thumb reach. & H4 & 2 \\
+A5 & 13\,px inputs make iOS zoom on tap. & H4 & 2 \\
+A7 & Kiosk screens left large empty areas. & H8 & 2 \\
+A6 & Hover styles ``stick'' after a tap. & H1 & 1 \\
+\bottomrule
+\end{tabularx}
+
+\medskip
+\begin{tabularx}{\columnwidth}{@{}lXlc@{}}
+\toprule
+\multicolumn{4}{@{}l}{\textbf{Study Hub website}} \\
+\midrule
+W1 & Dashboard links dead when their servers were down or failed to launch
+  (deprecated versions); no explanation shown. & H9, H1 & \textbf{4} \\
+W2 & Dashboards were recording tools; users need to view data. & H2 & \textbf{3} \\
+W3 & Separately styled Streamlit apps broke consistency. & H4 & \textbf{3} \\
+W4 & Site failed to start (stray build cache); no run instructions. & H10 & \textbf{3} \\
+W5 & Placeholder ``lorem ipsum'' text. & H8 & 2 \\
+W6 & Data offered as open downloads, no terms. & H5 & 2 \\
+W7 & Charts work with a mouse only. & H7 & 2 \\
+W9 & Request relies on an email app being set up. & H9 & 2 \\
+W8 & Widget dragging is weakly signposted. & H6 & 1 \\
+W10 & Thermal sample temperatures are illustrative. & H2 & 1 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Accessibility check}
+Measured on the live site by computing the WCAG contrast of every visible text style
+against its real background (AA: 4.5:1, or 3:1 for large text).
+
+\begin{center}\small
+\begin{tabularx}{\columnwidth}{@{}lXc@{}}
+\toprule
+Check & Result & \\
+\midrule
+Contrast, website & 9 of 24 styles fail on home: inactive items 2.30:1, grey text on
+  cards 4.09:1. & \fail \\
+Contrast, charts & Axis labels 3.1:1 at 10\,px (light mode). & \fail \\
+Contrast, Aura & Body 9.7:1, buttons 10.8:1 pass; captions 2.30:1, accent 2.53:1. &
+  \fail \\
+Text size & Smallest 9\,px; several styles under 12\,px. & \partres \\
+Keyboard & Widgets focusable and movable (Alt+arrows); dialog traps focus, Esc closes;
+  charts not keyboard-operable. & \partres \\
+Labels & All images have alt text; one icon button (theme toggle) has no name. &
+  \partres \\
+Touch targets & Aura tabs 50\,px, inputs 48\,px. & \pass \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Live demo}
+Aura Screen on a laptop: the old build needs dev-tools emulation and Scan Hub scrolls;
+the phone/kiosk frame fits the same screen without scrolling (A1, A2).
+
+%---------------------------------------------------------------------
+\section{Improvement plan}
+Ranked by severity. ``Ready'' = prototype built, to verify with users next lab.
+
+\begin{center}\small
+\begin{tabularx}{\columnwidth}{@{}lXl@{}}
+\toprule
+Issues & Planned change & Status \\
+\midrule
+W1--W3 & Replace the Streamlit links with data-showcase pages built into the site
+  (draggable widget dashboards, same analysis code). & Ready \\
+A1, A2 & Phone/kiosk-first Aura Screen: device-sized frame on desktop, full screen on
+  devices, core screens fit without scrolling. & Ready \\
+A3, W4 & Fix the report card; one-command launcher and run instructions. & Ready \\
+Contrast & Raise grey and caption text to $\geq$4.5:1 in both products. & Planned \\
+A4, A5, A7 & Bottom tab bar, 16\,px inputs, kiosk layouts that fill the screen. & Ready \\
+W6 & Access request with a data-use agreement instead of downloads. & Ready \\
+W7, keyboard & Keyboard access and a data table for each chart. & Planned \\
+Labels, size & Name the theme toggle; 12\,px minimum text. & Planned \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\todo{Add any new issues from user testing and re-rank.}
+
+\end{document}
