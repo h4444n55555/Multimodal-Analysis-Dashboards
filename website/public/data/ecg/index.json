@@ -1,0 +1,19 @@
+{
+  "modality": "ecg",
+  "source": {
+    "kind": "public",
+    "note": "PhysioNet drivedb record drive05 (ODC-By). Metrics from ECG/ecg_analysis.py."
+  },
+  "sessions": [
+    {
+      "id": "S01",
+      "subject": {
+        "id": "drive05",
+        "ageBand": "—",
+        "sex": "—"
+      },
+      "label": "Rest → city driving",
+      "durationS": 300
+    }
+  ]
+}

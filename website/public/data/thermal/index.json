@@ -1,0 +1,19 @@
+{
+  "modality": "thermal",
+  "source": {
+    "kind": "public",
+    "note": "Public-domain thermal video (Wikimedia Commons); temperatures are illustrative."
+  },
+  "sessions": [
+    {
+      "id": "S01",
+      "subject": {
+        "id": "S01",
+        "ageBand": "—",
+        "sex": "—"
+      },
+      "label": "Drinking a cold drink",
+      "durationS": 12.12
+    }
+  ]
+}
