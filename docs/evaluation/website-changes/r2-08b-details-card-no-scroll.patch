@@ -1,0 +1,121 @@
+diff --git a/website/src/components/modality/details.tsx b/website/src/components/modality/details.tsx
+index 4fae6d9..405de92 100644
+--- a/website/src/components/modality/details.tsx
++++ b/website/src/components/modality/details.tsx
+@@ -43,21 +43,25 @@ export function ModalityDetails({
+ 
+       <Dialog.Portal>
+         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl border border-border bg-background shadow-2xl data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+-          <div className="border-b border-border px-8 pb-5 pt-7 pr-14">
++        {/* wide and two-column so everything fits on one screen without scrolling;
++            the scroll area only kicks in on small screens */}
++        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-2rem)] max-w-6xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl border border-border bg-background shadow-2xl data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
++          <div className="border-b border-border px-8 pb-4 pt-6 pr-16">
+             <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Full details</p>
+             <Dialog.Title className="mt-1 text-2xl font-semibold tracking-tight">{title}: the sample recording</Dialog.Title>
+-            <Dialog.Description className="mt-1 text-muted-foreground">
++            <Dialog.Description className="mt-0.5 text-muted-foreground">
+               What this recording is, where it comes from, and how the page processes it.
+             </Dialog.Description>
+           </div>
+ 
+-          <div className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
+-            <div className="flex max-w-[68ch] flex-col gap-8 text-base leading-7">
++          <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6 [@media(max-height:780px)]:py-4">
++            {/* short laptop screens get slightly tighter text so it still fits */}
++            <div className="grid gap-x-12 gap-y-6 text-[15px] leading-6 lg:grid-cols-2 [@media(max-height:780px)]:gap-y-4 [@media(max-height:780px)]:text-sm [@media(max-height:780px)]:leading-[1.35rem]">
++              <div className="flex flex-col gap-6">
+               <Section heading="This recording">
+                 <p>{copy.recording}</p>
+                 {highlight && (
+-                  <p className="mt-3 rounded-xl border border-border bg-muted/50 px-4 py-3">{highlight}</p>
++                  <p className="mt-3 rounded-xl border border-border bg-muted/50 px-4 py-2.5">{highlight}</p>
+                 )}
+               </Section>
+ 
+@@ -82,7 +86,7 @@ export function ModalityDetails({
+               )}
+ 
+               <Section heading="Recording details">
+-                <dl className="grid gap-x-8 gap-y-2 sm:grid-cols-[auto_1fr]">
++                <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-[auto_1fr]">
+                   {facts.map(([k, v]) => (
+                     <div key={k} className="contents">
+                       <dt className="text-muted-foreground">{k}</dt>
+@@ -91,9 +95,11 @@ export function ModalityDetails({
+                   ))}
+                 </dl>
+               </Section>
++              </div>
+ 
++              <div className="flex flex-col gap-6">
+               <Section heading="How the page processes it">
+-                <ul className="flex list-disc flex-col gap-2 pl-5">
++                <ul className="flex list-disc flex-col gap-1.5 pl-5">
+                   {copy.processing.map((line) => (
+                     <li key={line}>{line}</li>
+                   ))}
+@@ -101,12 +107,13 @@ export function ModalityDetails({
+               </Section>
+ 
+               <Section heading="Keep in mind">
+-                <ul className="flex list-disc flex-col gap-2 pl-5">
++                <ul className="flex list-disc flex-col gap-1.5 pl-5">
+                   {copy.limits.map((line) => (
+                     <li key={line}>{line}</li>
+                   ))}
+                 </ul>
+               </Section>
++              </div>
+             </div>
+           </div>
+ 
+@@ -125,7 +132,7 @@ export function ModalityDetails({
+ function Section({ heading, children }: { heading: string; children: ReactNode }) {
+   return (
+     <section>
+-      <h3 className="mb-2 text-lg font-semibold tracking-tight">{heading}</h3>
++      <h3 className="mb-1.5 text-lg font-semibold tracking-tight">{heading}</h3>
+       {children}
+     </section>
+   );
+diff --git a/website/src/components/modality/rppg-explorer.tsx b/website/src/components/modality/rppg-explorer.tsx
+index 9f1d9bd..e38169b 100644
+--- a/website/src/components/modality/rppg-explorer.tsx
++++ b/website/src/components/modality/rppg-explorer.tsx
+@@ -149,9 +149,9 @@ function Dashboard({ session }: { session: RppgSession }) {
+             ["Camera", session.device.camera],
+             ["Measured from", session.device.roi],
+             ["Method", "POS (plane orthogonal to skin)"],
+-            ["Beats found", `${session.beats.length} (${fmt(v.artifact_pct, 0)}% left out of variability)`],
++            ["Beats found", `${session.beats.length} (${fmt(v.artifact_pct, 0)}% unreliable)`],
+             ["Reference", session.reference ? "Fingertip pulse sensor" : "—"],
+-            ["Pipeline", "cvpr-lab (classical extractors + vitals)"],
++            ["Pipeline", "cvpr-lab (study code, untrained model unused)"],
+           ]}
+         />
+         <RequestAccess />
+diff --git a/website/src/lib/explanations.ts b/website/src/lib/explanations.ts
+index 93eb23e..979b53c 100644
+--- a/website/src/lib/explanations.ts
++++ b/website/src/lib/explanations.ts
+@@ -88,16 +88,15 @@ export const DETAILS: Record<ModalityKey, DetailsCopy> = {
+   },
+   rppg: {
+     recording:
+-      "A simulated face colour trace with a known pulse: the head is still, then moves for ten seconds, then is still again. Simulation lets the page show the method before the study’s own camera recordings are released.",
++      "A simulated face colour trace with a known pulse: the head is still, then moves for ten seconds, then is still again.",
+     processing: [
+       "Each video frame is reduced to one average colour for the face.",
+       "The POS method combines the red, green and blue changes so that skin tone and lighting cancel out, leaving the pulse.",
+       "Heart rate is the strongest rhythm in the 42–180 bpm range, re-measured over a 10-second window every second.",
+       "Signal quality compares the pulse’s strength with everything else in that range. Below the floor, the page reports nothing rather than a guess.",
+-      "The analysis is the study’s rPPG code (cvpr-lab), run without its trained model, which has no trained weights yet.",
+     ],
+     limits: [
+-      "The sample is simulated, not a recording of a person. A real public sample will replace it.",
++      "The sample is simulated, not a recording of a person, so the page can show the method before the study’s own camera recordings are released.",
+       "Camera-based pulse is sensitive to movement and lighting; the head-motion stretch shows what that looks like.",
+       "Blood pressure and blood oxygen are not shown: a camera can only estimate them after calibration against a real device.",
+     ],

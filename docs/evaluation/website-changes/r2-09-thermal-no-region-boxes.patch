@@ -1,0 +1,59 @@
+diff --git a/website/src/components/modality/thermal-explorer.tsx b/website/src/components/modality/thermal-explorer.tsx
+index 873f57a..25c9fe7 100644
+--- a/website/src/components/modality/thermal-explorer.tsx
++++ b/website/src/components/modality/thermal-explorer.tsx
+@@ -394,25 +394,6 @@ function ThermalCanvas({
+       >
+         <canvas ref={canvasRef} width={W} height={H} className="h-full w-full" role="img" aria-label="Thermal frame" />
+         {!frame && <div className="absolute inset-0 animate-pulse bg-muted" />}
+-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full">
+-          {session.rois.map((roi) => {
+-            const [x, y, w, h] = roi.box;
+-            return (
+-              <rect
+-                key={roi.key}
+-                x={x}
+-                y={y}
+-                width={w}
+-                height={h}
+-                fill="none"
+-                stroke={ROI_COLOR[roi.key]}
+-                strokeWidth={2}
+-                strokeDasharray={roi.valid ? undefined : "4 3"}
+-                vectorEffect="non-scaling-stroke"
+-              />
+-            );
+-          })}
+-        </svg>
+         {hover && hoverTemp !== null && (
+           <div
+             className="pointer-events-none absolute rounded-md bg-black/75 px-2 py-1 text-xs tabular-nums text-white"
+diff --git a/website/src/lib/explanations.ts b/website/src/lib/explanations.ts
+index 979b53c..03e3396 100644
+--- a/website/src/lib/explanations.ts
++++ b/website/src/lib/explanations.ts
+@@ -62,13 +62,13 @@ export const DETAILS: Record<ModalityKey, DetailsCopy> = {
+       "A short thermal video of a person drinking a cold glass of juice. The cold drink cools the lips and mouth, which makes it a clear, easy-to-see example of a local temperature change on the face.",
+     processing: [
+       "Each frame is a grid of temperatures, one per pixel, shown with a colour scale from 22 to 36 °C.",
+-      "Four face regions (forehead, eyes, nose and mouth) are marked as boxes, and the average temperature inside each box is tracked over time.",
++      "Four face regions (forehead, eyes, nose and mouth) are defined as fixed areas, and the average temperature inside each is tracked over time.",
+       "Pixels warmer than 30 °C are counted as face, the rest as room, for the per-frame figures.",
+     ],
+     limits: [
+       "The clip is a public stand-in until the study’s own thermal recordings are released.",
+       "The original video stores colours, not temperatures. Temperatures here are rebuilt from the colour palette, so treat exact degrees as approximate; the changes over time are what matter.",
+-      "The region boxes stay in fixed positions rather than following facial landmarks, so any head movement shifts what each box covers.",
++      "The regions stay in fixed positions rather than following facial landmarks, so any head movement shifts what each region covers.",
+     ],
+   },
+   ecg: {
+@@ -106,7 +106,7 @@ export const DETAILS: Record<ModalityKey, DetailsCopy> = {
+ /** One line under each widget, saying what it shows in everyday words. */
+ export const CAPTIONS: Record<ModalityKey, Record<string, string>> = {
+   thermal: {
+-    video: "The camera’s view: brighter colours are warmer. The boxes mark the face regions tracked below.",
++    video: "The camera’s view: brighter colours are warmer. Hover to read the temperature at any point.",
+     now: "The average temperature inside each box at this moment of the video.",
+     hist: "How many pixels sit at each temperature. The left hump is the room, the right one the face.",
+     series: "How each face region’s temperature changes through the video. Switch to “Change” to compare them.",

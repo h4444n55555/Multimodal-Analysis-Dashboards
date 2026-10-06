@@ -11,12 +11,15 @@ import { cn } from "@/lib/utils";
 export function WidgetShell({
   title,
   note,
+  caption,
   actions,
   children,
   className,
 }: {
   title: string;
   note?: ReactNode;
+  /** one plain-language line under the chart: what this widget shows */
+  caption?: string;
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -26,7 +29,7 @@ export function WidgetShell({
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="flex items-center gap-1 truncate text-sm font-semibold">
-            <GripVertical className="-ml-1 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
+            <GripVertical className="-ml-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
             {title}
           </h3>
           {note && <p className="truncate text-xs text-muted-foreground">{note}</p>}
@@ -34,6 +37,11 @@ export function WidgetShell({
         {actions}
       </div>
       <div className={cn("relative min-h-0 flex-1", className)}>{children}</div>
+      {caption && (
+        <p className="mt-2 shrink-0 border-t border-border/60 pt-2 text-xs leading-snug text-foreground/80">
+          {caption}
+        </p>
+      )}
     </div>
   );
 }
@@ -52,11 +60,11 @@ export function BigNumber({ value, unit, sub }: { value: ReactNode; unit?: strin
 }
 
 /** Key/value facts about a recording. */
-export function Facts({ rows }: { rows: [string, ReactNode][] }) {
+export function Facts({ rows }: { rows: [ReactNode, ReactNode][] }) {
   return (
     <dl className="grid h-full content-end gap-y-1.5 text-sm">
-      {rows.map(([k, v]) => (
-        <div key={k} className="flex items-baseline justify-between gap-3 border-b border-border/60 pb-1.5 last:border-0">
+      {rows.map(([k, v], i) => (
+        <div key={i} className="flex items-baseline justify-between gap-3 border-b border-border/60 pb-1.5 last:border-0">
           <dt className="text-muted-foreground">{k}</dt>
           <dd className="text-right font-medium tabular-nums">{v}</dd>
         </div>

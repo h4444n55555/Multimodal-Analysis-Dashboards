@@ -1,0 +1,27 @@
+diff --git a/website/src/app/(home)/page.tsx b/website/src/app/(home)/page.tsx
+index 09a115b..5d399c8 100644
+--- a/website/src/app/(home)/page.tsx
++++ b/website/src/app/(home)/page.tsx
+@@ -100,8 +100,7 @@ export default function Home() {
+         </section>
+ 
+         {/* What we have built with the data */}
+-        {/* set apart with its own band so it reads as a highlight, not a footnote */}
+-        <section id="apps" className="scroll-mt-24 border-y border-border bg-muted/50">
++        <section id="apps" className="scroll-mt-24">
+           <div className="mx-auto w-full max-w-7xl px-6 py-24">
+             <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+               Applications
+diff --git a/website/src/components/ui/applications.tsx b/website/src/components/ui/applications.tsx
+index 46aa12a..66559a1 100644
+--- a/website/src/components/ui/applications.tsx
++++ b/website/src/components/ui/applications.tsx
+@@ -29,7 +29,7 @@ export function Applications() {
+           whileInView={{ opacity: 1, y: 0 }}
+           viewport={{ once: true, margin: "-60px" }}
+           transition={{ duration: 0.5, delay: i * 0.12, ease: [0.23, 1, 0.32, 1] }}
+-          className="grid gap-8 rounded-3xl border border-border bg-background p-8 shadow-xl shadow-black/5 md:grid-cols-[1fr_auto] md:items-center md:p-10 dark:shadow-black/40"
++          className="grid gap-8 rounded-3xl border border-border bg-card p-8 shadow-xl shadow-black/5 md:grid-cols-[1fr_auto] md:items-center md:p-10 dark:shadow-black/40"
+         >
+           <div>
+             <div className="flex items-center gap-4">

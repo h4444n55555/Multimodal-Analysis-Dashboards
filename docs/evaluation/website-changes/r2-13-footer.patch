@@ -1,0 +1,122 @@
+diff --git a/website/src/components/ui/footer-section.tsx b/website/src/components/ui/footer-section.tsx
+index 2b59042..80d630d 100644
+--- a/website/src/components/ui/footer-section.tsx
++++ b/website/src/components/ui/footer-section.tsx
+@@ -4,14 +4,22 @@ import Link from "next/link";
+ import { Mail } from "lucide-react";
+ import { motion, useReducedMotion } from "motion/react";
+ import type { ComponentProps, ReactNode } from "react";
++import { MODALITIES } from "@/lib/modalities";
++import { DATA_REQUEST_EMAIL } from "@/lib/links";
+ 
+-const siteLinks = [
+-  { label: "All data", href: "/#sensors" },
+-  { label: "Thermal data", href: "/thermal" },
+-  { label: "ECG data", href: "/ecg" },
+-  { label: "rPPG data", href: "/rppg" },
++// Data links come from the modality list, so a new data page appears here too.
++const dataLinks = [
++  ...MODALITIES.filter((m) => m.href).map((m) => ({ label: `${m.title} data`, href: m.href! })),
++  { label: "Data use agreement", href: "/data-agreement" },
++];
++
++// The home page sections, in the same order as the nav bar.
++const exploreLinks = [
++  { label: "Why this research", href: "/#why" },
++  { label: "Modalities", href: "/#sensors" },
++  { label: "Tasks", href: "/#tasks" },
+   { label: "Built with the data", href: "/#apps" },
+-  { label: "Research Pipeline", href: "/#status" },
++  { label: "Research pipeline", href: "/#status" },
+   { label: "Team", href: "/#team" },
+ ];
+ 
+@@ -51,39 +59,45 @@ function AnimatedContainer({
+   );
+ }
+ 
++function FooterLinks({ title, links, delay }: { title: string; links: { label: string; href: string }[]; delay: number }) {
++  return (
++    <AnimatedContainer delay={delay}>
++      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</p>
++      <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
++        {links.map((link) => (
++          <li key={link.href}>
++            <Link href={link.href} className="transition-colors duration-300 hover:text-foreground">
++              {link.label}
++            </Link>
++          </li>
++        ))}
++      </ul>
++    </AnimatedContainer>
++  );
++}
++
+ function Footer() {
+   return (
+     <footer className="relative mx-auto flex w-full max-w-7xl flex-col items-center justify-center rounded-t-4xl border-t bg-[radial-gradient(35%_128px_at_50%_0%,theme(backgroundColor.white/8%),transparent)] px-6 py-6 md:rounded-t-6xl">
+       <div className="-translate-x-1/2 -translate-y-1/2 absolute top-0 right-1/2 left-1/2 h-px w-1/3 rounded-full bg-foreground/20 blur" />
+ 
+-      <div className="grid w-full gap-8 py-10 sm:grid-cols-3 sm:gap-16">
+-        <AnimatedContainer className="max-w-xs space-y-4">
++      <div className="grid w-full gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
++        <AnimatedContainer className="max-w-xs space-y-3">
+           <p className="text-sm font-semibold tracking-tight">
+-            Multimodal Biosensing
++            Multimodal Affective Computing Study
+           </p>
+-          <p className="mt-2 text-sm text-muted-foreground">
++          <p className="text-sm text-muted-foreground">
++            How brief, involuntary facial and body signals reveal emotional and
++            cognitive state.
++          </p>
++          <p className="text-sm text-muted-foreground">
+             CVPR Lab &amp; ACAI Lab, School of AI &amp; Data Engineering, IIT
+             Ropar.
+           </p>
+         </AnimatedContainer>
+ 
+-        <AnimatedContainer delay={0.2}>
+-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+-            Site
+-          </p>
+-          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+-            {siteLinks.map((link) => (
+-              <li key={link.href}>
+-                <Link
+-                  href={link.href}
+-                  className="transition-colors duration-300 hover:text-foreground"
+-                >
+-                  {link.label}
+-                </Link>
+-              </li>
+-            ))}
+-          </ul>
+-        </AnimatedContainer>
++        <FooterLinks title="Data" links={dataLinks} delay={0.15} />
++        <FooterLinks title="Explore" links={exploreLinks} delay={0.2} />
+ 
+         <AnimatedContainer delay={0.3}>
+           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+@@ -102,11 +116,20 @@ function Footer() {
+               </li>
+             ))}
+           </ul>
++          <p className="mt-5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
++            Data requests
++          </p>
++          <a
++            href={`mailto:${DATA_REQUEST_EMAIL}`}
++            className="mt-2 block break-all text-sm text-muted-foreground transition-colors duration-300 hover:text-foreground"
++          >
++            {DATA_REQUEST_EMAIL}
++          </a>
+         </AnimatedContainer>
+       </div>
+ 
+       <div className="w-full border-t py-6 text-center text-xs text-muted-foreground">
+-        © {new Date().getFullYear()} Multimodal Biosensing Project · IIT Ropar
++        © {new Date().getFullYear()} Multimodal Affective Computing (MMAC) Study · CVPR Lab &amp; ACAI Lab, IIT Ropar
+       </div>
+     </footer>
+   );

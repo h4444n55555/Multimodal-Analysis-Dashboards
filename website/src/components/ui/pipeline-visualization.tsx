@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from "motion/react"
 const messages = [
   "Session start: Thermal, ECG, EMG, and rPPG sensors synced",
   "Preprocessing: filtering, resampling, and window alignment",
-  "Feature extraction: per-modality embeddings computed",
-  "Fusion encoder: cross-modal attention over aligned windows",
+  "Feature extraction: key measures computed for each signal",
+  "Fusion: all four signals analysed together",
   "Inference: 6 task heads evaluated in parallel",
   "Heart Disease Prediction → cardiac risk score generated",
   "Engagement Detection → attention level logged",
@@ -127,11 +127,12 @@ function StatusIndicator({
   return <circle cx={cx} cy={cy} r={3} fill={color} opacity={0.95} />
 }
 
+// General labels only: the diagram describes the method, not specific devices.
 const sensors = [
-  { eyebrow: "THERMAL", title: "FLIR C5", y: 14 },
-  { eyebrow: "ECG", title: "Frontier X2", y: 66 },
-  { eyebrow: "EMG", title: "sEMG Array", y: 118 },
-  { eyebrow: "RPPG", title: "Camera rPPG", y: 170 },
+  { title: "Thermal", y: 14 },
+  { title: "ECG", y: 66 },
+  { title: "EMG", y: 118 },
+  { title: "rPPG", y: 170 },
 ]
 
 const tasks = [
@@ -181,40 +182,36 @@ export default function MultimodalPipeline() {
   )
 
   return (
-    <div className="pv-card bg-card dark:bg-[#111214] border border-black/15 dark:border-white/[0.12] shadow-[0_25px_60px_-30px_rgba(0,0,0,0.25)] dark:shadow-[0_25px_60px_-30px_rgba(0,0,0,0.85)] rounded-[14px] overflow-hidden font-sans w-full max-w-[920px] mx-auto">
+    <div className="pv-card w-full font-sans">
       {/* Header */}
-      <div className="px-[18px] py-[11px] border-b border-black/[0.12] dark:border-white/[0.06] flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-[7px]">
           <motion.span
             className="w-[6px] h-[6px] rounded-full bg-green-500 inline-block"
             animate={{ opacity: [1, 0.2, 1] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           />
-          <span className="text-[11px] text-black/45 dark:text-white/30 tracking-[0.1em] font-mono">
-            MULTIMODAL PIPELINE · LIVE
-          </span>
+          <span className="text-base text-muted-foreground">Multimodal pipeline · live</span>
         </div>
-        <span className="text-[11px] text-black/35 dark:text-white/[0.18] font-mono">
+        <span className="text-base text-muted-foreground">
           4 modalities · 6 tasks
         </span>
       </div>
 
       {/* Dataset counter */}
-      <div className="border-b border-black/[0.12] dark:border-white/[0.06] px-[18px] py-[16px] flex items-baseline gap-2.5">
-        <span className="text-[26px] leading-none text-black/85 dark:text-white/[0.85] font-mono tabular-nums">
+      <div className="mt-3 flex items-baseline gap-2.5">
+        <span className="text-2xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
           {subjectCount}
         </span>
-        <span className="text-[11px] text-black/45 dark:text-white/30 tracking-[0.09em] font-mono">
-          SUBJECTS RECORDED
-        </span>
+        <span className="text-base text-muted-foreground">subjects recorded</span>
       </div>
 
       {/* SVG Pipeline Visualization */}
-      <div className="overflow-x-auto">
+      <div className="mt-4 overflow-x-auto">
         <svg
           width="100%"
           viewBox="0 0 760 232"
-          className="block"
+          className="block overflow-visible"
           style={{ minWidth: "700px" }}
         >
         <defs>
@@ -230,7 +227,7 @@ export default function MultimodalPipeline() {
             <path
               d="M2 1.5L7.5 5L2 8.5"
               fill="none"
-              stroke="rgba(0,82,255,0.45)"
+              stroke="rgba(51,117,255,0.7)"
               strokeWidth="1.6"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -244,7 +241,7 @@ export default function MultimodalPipeline() {
             key={`in-${i}`}
             d={d}
             fill="none"
-            stroke="rgba(0,82,255,0.18)"
+            stroke="rgba(51,117,255,0.5)"
             strokeWidth="1.5"
             strokeDasharray="3 5"
           />
@@ -254,7 +251,7 @@ export default function MultimodalPipeline() {
         <path
           d={midPath}
           fill="none"
-          stroke="rgba(0,82,255,0.22)"
+          stroke="rgba(51,117,255,0.55)"
           strokeWidth="1.5"
           strokeDasharray="3 5"
           markerEnd="url(#ma)"
@@ -266,7 +263,7 @@ export default function MultimodalPipeline() {
             key={`out-${i}`}
             d={d}
             fill="none"
-            stroke="rgba(0,82,255,0.15)"
+            stroke="rgba(51,117,255,0.45)"
             strokeWidth="1.5"
             strokeDasharray="3 5"
           />
@@ -301,26 +298,16 @@ export default function MultimodalPipeline() {
               rx="8"
               fill="var(--pv-node-bg)"
               stroke="var(--pv-node-border)"
-              strokeWidth="0.5"
+              strokeWidth="1"
             />
             <text
               x={14 + SENSOR_W / 2}
-              y={sensor.y + 14}
+              y={sensor.y + SENSOR_H / 2}
+              dy="0.35em"
               textAnchor="middle"
-              fontSize="9.5"
-              fill="var(--pv-text-3)"
-              fontFamily="system-ui"
-              letterSpacing=".07em"
-            >
-              {sensor.eyebrow}
-            </text>
-            <text
-              x={14 + SENSOR_W / 2}
-              y={sensor.y + 29}
-              textAnchor="middle"
-              fontSize="12.5"
+              fontSize="10"
+              fontWeight="600"
               fill="var(--pv-text-1)"
-              fontFamily="system-ui"
             >
               {sensor.title}
             </text>
@@ -336,15 +323,14 @@ export default function MultimodalPipeline() {
           rx="8"
           fill="var(--pv-node-bg)"
           stroke="var(--pv-node-border)"
-          strokeWidth="0.5"
+          strokeWidth="1"
         />
         <text
           x={preLeft + 59}
           y="100"
           textAnchor="middle"
-          fontSize="10.5"
+          fontSize="7.5"
           fill="var(--pv-text-3)"
-          fontFamily="system-ui"
           letterSpacing=".07em"
         >
           PREPROCESS
@@ -353,9 +339,8 @@ export default function MultimodalPipeline() {
           x={preLeft + 59}
           y="117"
           textAnchor="middle"
-          fontSize="13"
+          fontSize="10"
           fill="var(--pv-text-1)"
-          fontFamily="system-ui"
         >
           Sync + Align
         </text>
@@ -363,9 +348,8 @@ export default function MultimodalPipeline() {
           x={preLeft + 59}
           y="151"
           textAnchor="middle"
-          fontSize="9.5"
+          fontSize="8.5"
           fill="var(--pv-text-4)"
-          fontFamily="monospace"
         >
           windowed, per-session
         </text>
@@ -386,34 +370,31 @@ export default function MultimodalPipeline() {
           x={fusionLeft + 65}
           y="98"
           textAnchor="middle"
-          fontSize="10.5"
-          fill="rgba(51,117,255,0.65)"
-          fontFamily="system-ui"
+          fontSize="7.5"
+          fill="rgba(51,117,255,0.9)"
           letterSpacing=".07em"
         >
-          FUSION MODEL
+          FUSION
         </text>
         <text
           x={fusionLeft + 65}
           y="121"
           textAnchor="middle"
-          fontSize="13.5"
+          fontSize="10"
           fill="var(--pv-fusion-text)"
-          fontFamily="system-ui"
-          fontWeight="500"
+          fontWeight="600"
         >
-          Cross-Modal
+          All signals
         </text>
         <text
           x={fusionLeft + 65}
           y="137"
           textAnchor="middle"
-          fontSize="13.5"
+          fontSize="10"
           fill="var(--pv-fusion-text)"
-          fontFamily="system-ui"
-          fontWeight="500"
+          fontWeight="600"
         >
-          Encoder
+          combined
         </text>
         <PulsingDot cx={fusionLeft + 53} cy={148} color="#0052FF" duration={1.2} delay={0} />
         <PulsingDot cx={fusionLeft + 65} cy={148} color="#0052FF" duration={1.2} delay={0.4} />
@@ -422,11 +403,10 @@ export default function MultimodalPipeline() {
           x={fusionLeft + 65}
           y="173"
           textAnchor="middle"
-          fontSize="9.5"
-          fill="rgba(0,82,255,0.4)"
-          fontFamily="monospace"
+          fontSize="8.5"
+          fill="rgba(0,82,255,0.75)"
         >
-          trained on synced sessions
+          learned from synced sessions
         </text>
 
         {/* Task output nodes */}
@@ -440,15 +420,14 @@ export default function MultimodalPipeline() {
               rx="7"
               fill="var(--pv-task-bg)"
               stroke="var(--pv-task-border)"
-              strokeWidth="0.5"
+              strokeWidth="1"
             />
             <text
               x={taskLeft + TASK_W / 2 - 4}
               y={task.y + 18.5}
               textAnchor="middle"
-              fontSize="11.5"
+              fontSize="9.2"
               fill="var(--pv-text-2)"
-              fontFamily="system-ui"
             >
               {task.title}
             </text>
@@ -465,9 +444,9 @@ export default function MultimodalPipeline() {
       </div>
 
       {/* Message Display */}
-      <div className="border-t border-black/[0.12] dark:border-white/[0.06] px-[18px] py-[9px] h-[52px]">
+      <div className="mt-4 h-[28px]">
         <div className="flex gap-2 items-start h-full">
-          <span className="text-[#0052FF]/55 font-mono text-[13px] leading-[1.5] shrink-0">
+          <span className="text-base leading-[1.55] text-muted-foreground shrink-0">
             ›
           </span>
           <div className="relative flex-1 overflow-hidden h-full">
@@ -478,7 +457,7 @@ export default function MultimodalPipeline() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -5 }}
                 transition={{ duration: 0.25 }}
-                className="font-mono text-[12px] text-black/55 dark:text-white/[0.42] leading-[1.55] absolute inset-0"
+                className="text-base text-muted-foreground leading-[1.55] absolute inset-0"
               >
                 {messages[messageIndex]}
               </motion.div>

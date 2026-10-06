@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { cloneElement, isValidElement, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { Pause, Play } from "lucide-react";
 import { useAsset } from "@/lib/use-json";
 import { dataUrl, type DataIndex, type ThermalSession } from "@/lib/sample-data";
@@ -11,6 +10,9 @@ import { ModalityHeader, Segmented } from "@/components/modality/kit";
 import { Facts, WidgetShell } from "@/components/modality/widget";
 import { RequestAccess } from "@/components/modality/request-access";
 import { DraggableWidgetGrid, type WidgetItem } from "@/components/ui/draggable-widget-grid";
+import { AboutData } from "@/components/modality/explain";
+import { ModalityDetails } from "@/components/modality/details";
+import { CAPTIONS } from "@/lib/explanations";
 
 // Region identity follows the fixed categorical order (validated slots 1-4)
 const ROI_COLOR: Record<string, string> = {
@@ -53,7 +55,6 @@ export function ThermalExplorer() {
       <ModalityHeader
         current="thermal"
         sourceNote={index.data?.source.note}
-        source={s?.source}
         device={s ? `${s.device.model} · ${s.frames.width} × ${s.frames.height} shown` : undefined}
       />
       {index.error && <p className="text-sm text-destructive">Couldn’t load the thermal data ({index.error}).</p>}
@@ -274,19 +275,66 @@ function Dashboard({ session, frames }: { session: ThermalSession; frames: Uint8
     }
   };
 
+  const withCaption = (item: WidgetItem) => {
+    const el = render(item);
+    return isValidElement(el) ? cloneElement(el as ReactElement<{ caption?: string }>, { caption: CAPTIONS.thermal[item.id] }) : el;
+  };
+
   return (
     <div className="flex flex-col gap-14">
+      <AboutData modality="thermal" />
+
       <div className="flex flex-col gap-3">
         <p className="text-xs text-muted-foreground">Drag widgets by their title to rearrange.</p>
-        <DraggableWidgetGrid items={WIDGETS} renderItem={render} maxColumns={4} cellSize={280} gap={14} />
+        <DraggableWidgetGrid items={WIDGETS} renderItem={withCaption} maxColumns={4} cellSize={280} gap={14} />
       </div>
 
-      <RequestAccess />
-
-      <Link href="/ecg" className="self-start text-sm font-medium underline-offset-4 hover:underline">
-        See the ECG data →
-      </Link>
+      <div className="flex flex-col gap-5">
+        <ModalityDetails
+          modality="thermal"
+          title="Thermal"
+          highlight={thermalHighlight(session)}
+          source={session.source}
+          facts={[
+            ["Camera", session.device.model],
+            ["Shown at", `${W} × ${H} pixels`],
+            ["Frames", `${meta.count} at ${meta.fps} per second`],
+            ["Length", `${session.durationS} s`],
+            ["Regions tracked", session.rois.map((r) => r.label).join(", ")],
+            ...(session.context ? [["Room temperature", `${session.context.ambientC} °C`] as [string, string]] : []),
+            ["Licence", session.source?.license ?? "—"],
+          ]}
+        />
+        <RequestAccess />
+      </div>
     </div>
+  );
+}
+
+/** "The mouth cooled by 1.3 °C while drinking…" — the region that changed most. */
+function thermalHighlight(session: ThermalSession) {
+  const { rateHz, roiMeanC } = session.series;
+  const [before, during, after] = ["Before", "Drinking", "After"].map((n) => session.phases.find((p) => p.name === n));
+  if (!before || !during) return undefined;
+  const mean = (v: number[], p: { startS: number; endS: number }) => {
+    const seg = v.slice(Math.floor(p.startS * rateHz), Math.ceil(p.endS * rateHz));
+    return seg.reduce((a, x) => a + x, 0) / Math.max(1, seg.length);
+  };
+  const drops = session.rois
+    .filter((r) => r.valid)
+    .map((r) => {
+      const v = roiMeanC[r.key];
+      const b = mean(v, before);
+      return { label: r.label, drop: b - mean(v, during), recovered: after ? b - mean(v, after) < 0.3 : false };
+    })
+    .sort((a, b) => b.drop - a.drop);
+  const top = drops[0];
+  if (!top || top.drop < 0.2) return undefined;
+  return (
+    <>
+      In this clip, the <strong>{top.label.toLowerCase()}</strong> cooled by <strong>{top.drop.toFixed(1)} °C</strong>{" "}
+      while drinking{top.recovered ? ", then warmed back up." : "."}
+    </>
   );
 }
 
@@ -346,25 +394,6 @@ function ThermalCanvas({
       >
         <canvas ref={canvasRef} width={W} height={H} className="h-full w-full" role="img" aria-label="Thermal frame" />
         {!frame && <div className="absolute inset-0 animate-pulse bg-muted" />}
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full">
-          {session.rois.map((roi) => {
-            const [x, y, w, h] = roi.box;
-            return (
-              <rect
-                key={roi.key}
-                x={x}
-                y={y}
-                width={w}
-                height={h}
-                fill="none"
-                stroke={ROI_COLOR[roi.key]}
-                strokeWidth={2}
-                strokeDasharray={roi.valid ? undefined : "4 3"}
-                vectorEffect="non-scaling-stroke"
-              />
-            );
-          })}
-        </svg>
         {hover && hoverTemp !== null && (
           <div
             className="pointer-events-none absolute rounded-md bg-black/75 px-2 py-1 text-xs tabular-nums text-white"
@@ -374,7 +403,7 @@ function ThermalCanvas({
           </div>
         )}
       </div>
-      <div className="mt-2 flex items-center gap-2 text-[11px] tabular-nums text-muted-foreground" style={{ width: dw }}>
+      <div className="mt-2 flex items-center gap-2 text-xs tabular-nums text-muted-foreground" style={{ width: dw }}>
         <span>{DISPLAY_RANGE[0]}°</span>
         <div className="h-1.5 flex-1 rounded-full" style={{ background: gradientCss(cmap) }} aria-hidden="true" />
         <span>{DISPLAY_RANGE[1]}°C</span>
@@ -443,7 +472,7 @@ function Histogram({ frame, toC }: { frame: Uint8Array | null; toC: (b: number) 
           {bins[hover].from.toFixed(1)}–{(bins[hover].from + STEP).toFixed(1)}° · {bins[hover].pct.toFixed(1)}% of pixels
         </p>
       )}
-      <p className="pointer-events-none absolute left-0 top-0 flex gap-3 text-[11px] text-muted-foreground">
+      <p className="pointer-events-none absolute left-0 top-0 flex gap-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">
           <span className="h-2 w-2 rounded-sm" style={{ background: "var(--viz-muted)" }} /> room
         </span>
@@ -524,7 +553,7 @@ function RoiChart({
             <path key={l.key} d={linePath(times, l.values, x, y)} fill="none" stroke={ROI_COLOR[l.key]} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
           ))}
           {ends.map((e) => (
-            <text key={e.key} x={x.range[1] + 6} y={e.y} dy="0.32em" fontSize={10.5} fill="var(--viz-text-2)">
+            <text key={e.key} x={x.range[1] + 6} y={e.y} dy="0.32em" fontSize={12} fill="var(--viz-text-2)">
               {e.label}
             </text>
           ))}
@@ -597,13 +626,13 @@ function RangeSummary({ session }: { session: ThermalSession }) {
                   <line x1={x(r.min)} x2={x(r.max)} y1={cy} y2={cy} stroke={ROI_COLOR[r.key]} strokeWidth={8} strokeLinecap="round" opacity={0.35} />
                   <circle cx={x(r.mean)} cy={cy} r={6} fill={ROI_COLOR[r.key]} stroke="var(--card)" strokeWidth={2} />
                   {!narrow && (
-                    <text x={width - margin.right + 12} y={cy} dy="0.32em" fontSize={11} fill="var(--viz-text-2)" className="tabular-nums">
+                    <text x={width - margin.right + 12} y={cy} dy="0.32em" fontSize={12} fill="var(--viz-text-2)" className="tabular-nums">
                       {r.mean.toFixed(2)}° ({r.min.toFixed(1)}–{r.max.toFixed(1)})
                     </text>
                   )}
                 </>
               ) : (
-                <text x={margin.left} y={cy} dy="0.32em" fontSize={11} fill="var(--viz-muted)">
+                <text x={margin.left} y={cy} dy="0.32em" fontSize={12} fill="var(--viz-muted)">
                   hidden by glasses
                 </text>
               )}

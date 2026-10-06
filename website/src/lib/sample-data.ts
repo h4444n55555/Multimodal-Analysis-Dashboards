@@ -104,4 +104,66 @@ export type EcgSession = SessionSummary & {
   };
 };
 
+export type RppgMethod = "pos" | "chrom" | "green";
+export type QualityLabel = "good" | "fair" | "weak" | "poor" | "measuring";
+
+/** Output of website/scripts/rppg/make_showcase.py — cvpr-lab's classical extractors + vitals.py. */
+export type RppgSession = SessionSummary & {
+  device: { camera: string; fps: number; roi: string };
+  source?: DataSource;
+  phases: Phase[];
+  /** per-frame mean face colour, 0–255 */
+  rgb: { fs: number; r: number[]; g: number[]; b: number[] };
+  /** standardised pulse waveforms, one per extractor, frame-aligned */
+  waves: Record<RppgMethod, number[]>;
+  /** fingertip-oximeter PPG on frame times, standardised */
+  reference: { fs: number; values: number[] } | null;
+  /** frame indices of detected systolic peaks (POS) */
+  beats: number[];
+  ibi: { t: number[]; ms: number[]; valid: boolean[] };
+  /** sliding 10 s heart rate, every second */
+  track: { t: number[]; snrDb: (number | null)[]; reference: (number | null)[] } & Record<RppgMethod, (number | null)[]>;
+  scores: Record<RppgMethod, Partial<{ snrDb: number; hrBpm: number; maeBpm: number; pearson: number }>>;
+  /** vitals.compute_all, withheld measures omitted */
+  vitals: Partial<Record<string, number>>;
+  quality: { startS: number; endS: number; status: QualityStatus; label: QualityLabel; snrDb: number | null }[];
+  spectrum: { bpm: number[]; power: number[] } | null;
+  beatTemplate: { values: number[]; cycleS: number } | null;
+  respiration: Partial<Record<"riiv" | "riav" | "rsa", { brpm: number; prominence: number }>>;
+  channels: Partial<Record<"red" | "green" | "blue", { ac?: number; dc?: number; ac_dc_pct?: number }>>;
+  /** the stretch the colour ratios were measured over */
+  colourWindowS: [number, number] | null;
+};
+
+/** Output of website/scripts/emg/make_showcase.py. Amplitudes in µV. */
+export type EmgChannel = {
+  name: string;
+  /** 1–2 forearm rings of 8, 3–4 wrist rings of 6 */
+  ring: number;
+  pos: number;
+  restRms: number;
+  activeRms: number;
+  /** contraction vs rest, dB */
+  ratioDb: number;
+  /** mains hum share of the raw 20–450 Hz power, % */
+  lineSharePct: number;
+  status: QualityStatus;
+};
+
+export type EmgSession = SessionSummary & {
+  device: { model: string; fs: number; units: string; placement: string };
+  source?: DataSource;
+  phases: Phase[];
+  lineHz: number;
+  /** the forearm electrode shown in the traces */
+  mainChannel: string;
+  signal: { fs: number; raw: number[]; clean: number[]; units: string };
+  envelope: { t: number[]; uv: number[] };
+  channels: EmgChannel[];
+  quality: { status: QualityStatus; message: string; snrDb: number; goodChannels: number; totalChannels: number; lineSharePct: number };
+  qualityWindows: { startS: number; endS: number; status: QualityStatus; message: string }[];
+  /** contraction spectrum, power normalised to 1 */
+  psd: { freqs: number[]; power: number[]; medianHz: number; meanHz: number };
+};
+
 export const dataUrl = (modality: string, file: string) => `/data/${modality}/${file}`;

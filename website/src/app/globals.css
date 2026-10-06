@@ -63,7 +63,7 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(0.47 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -100,7 +100,7 @@
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  --muted-foreground: oklch(0.76 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
@@ -124,26 +124,26 @@
 
 .pv-card {
   --pv-node-bg: #ffffff;
-  --pv-node-border: rgba(0, 0, 0, 0.14);
+  --pv-node-border: rgba(0, 0, 0, 0.22);
   --pv-task-bg: #ffffff;
-  --pv-task-border: rgba(0, 0, 0, 0.12);
+  --pv-task-border: rgba(0, 0, 0, 0.2);
   --pv-text-1: rgba(0, 0, 0, 0.85);
   --pv-text-2: rgba(0, 0, 0, 0.65);
-  --pv-text-3: rgba(0, 0, 0, 0.4);
-  --pv-text-4: rgba(0, 0, 0, 0.3);
+  --pv-text-3: rgba(0, 0, 0, 0.62);
+  --pv-text-4: rgba(0, 0, 0, 0.58);
   --pv-fusion-bg: #eaf1ff;
   --pv-fusion-text: rgba(0, 0, 0, 0.88);
 }
 
 .dark .pv-card {
-  --pv-node-bg: #141414;
-  --pv-node-border: rgba(255, 255, 255, 0.09);
-  --pv-task-bg: #111111;
-  --pv-task-border: rgba(255, 255, 255, 0.07);
+  --pv-node-bg: #161616;
+  --pv-node-border: rgba(255, 255, 255, 0.2);
+  --pv-task-bg: #161616;
+  --pv-task-border: rgba(255, 255, 255, 0.18);
   --pv-text-1: rgba(255, 255, 255, 0.82);
-  --pv-text-2: rgba(255, 255, 255, 0.62);
-  --pv-text-3: rgba(255, 255, 255, 0.28);
-  --pv-text-4: rgba(255, 255, 255, 0.18);
+  --pv-text-2: rgba(255, 255, 255, 0.78);
+  --pv-text-3: rgba(255, 255, 255, 0.6);
+  --pv-text-4: rgba(255, 255, 255, 0.55);
   --pv-fusion-bg: #050d1c;
   --pv-fusion-text: #ffffff;
 }
@@ -155,7 +155,7 @@
 .viz {
   --viz-grid: #e1e0d9;
   --viz-axis: #c3c2b7;
-  --viz-muted: #898781;
+  --viz-muted: #67655f;
   --viz-text: #0b0b0b;
   --viz-text-2: #52514e;
   --viz-band: rgba(11, 11, 11, 0.03);
@@ -172,7 +172,7 @@
 .dark .viz {
   --viz-grid: #2c2c2a;
   --viz-axis: #383835;
-  --viz-muted: #898781;
+  --viz-muted: #a6a49c;
   --viz-text: #ffffff;
   --viz-text-2: #c3c2b7;
   --viz-band: rgba(255, 255, 255, 0.05);

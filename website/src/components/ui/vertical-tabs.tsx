@@ -13,6 +13,8 @@ export function VerticalTabs() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  // once a visitor picks a row, stop rotating it out from under them
+  const [stopped, setStopped] = useState(false);
 
   const handleNext = useCallback(() => {
     setDirection(1);
@@ -20,21 +22,21 @@ export function VerticalTabs() {
   }, []);
 
   const handleTabClick = (index: number) => {
+    setStopped(true);
     if (index === activeIndex) return;
     setDirection(index > activeIndex ? 1 : -1);
     setActiveIndex(index);
-    setIsPaused(false);
   };
 
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || stopped) return;
 
     const interval = setInterval(() => {
       handleNext();
     }, AUTO_PLAY_DURATION);
 
     return () => clearInterval(interval);
-  }, [activeIndex, isPaused, handleNext]);
+  }, [activeIndex, isPaused, stopped, handleNext]);
 
   const variants = {
     enter: (direction: number) => ({
@@ -65,7 +67,7 @@ export function VerticalTabs() {
               <h2 className="tracking-tighter text-balance text-3xl font-medium md:text-4xl lg:text-5xl text-foreground">
                 Modalities
               </h2>
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-[0.3em] block ml-0.5">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-[0.3em] block ml-0.5">
                 (DATA)
               </span>
             </div>
@@ -89,17 +91,17 @@ export function VerticalTabs() {
                       "group relative flex cursor-pointer items-start gap-4 py-6 md:py-8 text-left outline-none transition-all duration-500 border-t border-border/50 first:border-0 focus-visible:ring-2 focus-visible:ring-ring/50",
                       isActive
                         ? "text-foreground"
-                        : "text-muted-foreground/60 hover:text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     <div className="absolute left-[-16px] md:left-[-24px] top-0 bottom-0 w-[2px] bg-muted">
                       {isActive && (
                         <motion.div
-                          key={`progress-${index}-${isPaused}`}
+                          key={`progress-${index}-${isPaused}-${stopped}`}
                           className="absolute top-0 left-0 w-full bg-foreground origin-top"
-                          initial={{ height: "0%" }}
+                          initial={{ height: stopped ? "100%" : "0%" }}
                           animate={
-                            isPaused ? { height: "0%" } : { height: "100%" }
+                            stopped ? { height: "100%" } : isPaused ? { height: "0%" } : { height: "100%" }
                           }
                           transition={{
                             duration: AUTO_PLAY_DURATION / 1000,
@@ -109,7 +111,7 @@ export function VerticalTabs() {
                       )}
                     </div>
 
-                    <span className="text-[9px] md:text-[10px] font-medium mt-1 tabular-nums opacity-50">
+                    <span className="text-xs font-medium mt-1 tabular-nums text-muted-foreground">
                       /{sensor.id}
                     </span>
 
@@ -123,35 +125,21 @@ export function VerticalTabs() {
                         {sensor.title}
                       </span>
 
-                      <AnimatePresence mode="wait">
-                        {isActive && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{
-                              duration: 0.3,
-                              ease: [0.23, 1, 0.32, 1],
-                            }}
-                            className="overflow-hidden"
-                          >
-                            {sensor.href ? (
-                              <Link
-                                href={sensor.href}
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1.5 pb-2 text-sm font-medium text-foreground transition-colors hover:text-muted-foreground"
-                              >
-                                Explore the data
-                                <ArrowRight className="h-3.5 w-3.5" />
-                              </Link>
-                            ) : (
-                              <span className="inline-block pb-2 text-sm font-medium text-muted-foreground/60">
-                                Data coming soon
-                              </span>
-                            )}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {/* every row keeps its link visible, not just the active one */}
+                      {sensor.href ? (
+                        <Link
+                          href={sensor.href}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 pb-2 text-sm font-medium text-foreground underline-offset-4 transition-colors hover:underline"
+                        >
+                          Explore the {sensor.title} data
+                          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                        </Link>
+                      ) : (
+                        <span className="inline-block pb-2 text-sm font-medium text-muted-foreground">
+                          Data coming soon
+                        </span>
+                      )}
                     </div>
                   </div>
                 );

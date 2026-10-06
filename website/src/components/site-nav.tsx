@@ -25,7 +25,7 @@ import { MODALITIES } from "@/lib/modalities";
 const sections = [
   { id: "hero", label: "Overview" },
   { id: "why", label: "Why This Research" },
-  { id: "sensors", label: "Modalities" },
+  { id: "sensors", label: "Data" },
   { id: "tasks", label: "Tasks" },
   { id: "apps", label: "Built with the Data" },
   { id: "status", label: "Research Pipeline" },
@@ -64,7 +64,7 @@ export function SiteNav() {
   const onHome = pathname === "/";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur">
+    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur print:hidden">
       <div className="mx-auto grid h-16 w-full max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6">
         <Link href="/" className="flex items-center justify-self-start">
           <Image
@@ -88,27 +88,29 @@ export function SiteNav() {
           {sections.map((s) =>
             s.id === "sensors" ? (
               <DropdownMenu key={s.id}>
+                {/* styled as a button so it reads as clickable (P5 in testing) */}
                 <DropdownMenuTrigger
                   className={cn(
-                    "flex items-center gap-1 text-muted-foreground outline-none transition-colors hover:text-foreground aria-expanded:text-foreground",
-                    onHome && active === s.id && "text-foreground font-medium",
+                    "flex items-center gap-1 rounded-full border border-border bg-muted/60 px-3 py-1 font-medium text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 aria-expanded:bg-muted",
+                    onHome && active === s.id && "border-foreground/40",
                   )}
                 >
                   {s.label}
-                  <ChevronDown className="size-3.5" />
+                  <ChevronDown className="size-3.5" aria-hidden="true" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center">
+                <DropdownMenuContent align="center" className="w-72">
                   {MODALITIES.map((m) =>
                     m.href ? (
                       <DropdownMenuItem key={m.key} asChild>
-                        <Link href={m.href}>{m.title}</Link>
+                        <Link href={m.href} className="flex flex-col items-start gap-0.5">
+                          <span className="font-medium">{m.title}</span>
+                          <span className="text-xs text-muted-foreground">{m.measures}</span>
+                        </Link>
                       </DropdownMenuItem>
                     ) : (
-                      <DropdownMenuItem key={m.key} disabled>
-                        {m.title}
-                        <span className="ml-auto text-xs text-muted-foreground">
-                          Soon
-                        </span>
+                      <DropdownMenuItem key={m.key} disabled className="flex flex-col items-start gap-0.5">
+                        <span className="font-medium">{m.title} · soon</span>
+                        <span className="text-xs text-muted-foreground">{m.measures}</span>
                       </DropdownMenuItem>
                     ),
                   )}
@@ -188,7 +190,7 @@ export function SiteNav() {
                           ) : (
                             <span
                               key={m.key}
-                              className="flex items-center gap-2 text-muted-foreground/50"
+                              className="flex items-center gap-2 text-muted-foreground"
                             >
                               {m.title}
                               <span className="text-xs">Soon</span>

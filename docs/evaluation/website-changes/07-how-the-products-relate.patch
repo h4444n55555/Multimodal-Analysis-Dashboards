@@ -1,0 +1,30 @@
+diff --git a/website/src/app/(home)/page.tsx b/website/src/app/(home)/page.tsx
+index 2107174..5676987 100644
+--- a/website/src/app/(home)/page.tsx
++++ b/website/src/app/(home)/page.tsx
+@@ -109,8 +109,10 @@ export default function Home() {
+               Built with the data
+             </h2>
+             <p className="mt-1 max-w-xl text-muted-foreground">
+-              Tools we&apos;ve developed on top of these recordings. Each one
+-              opens in a new tab.
++              This site is for researchers exploring the study&apos;s data. The
++              tools below are separate apps for other people, such as patients,
++              that reuse the same sensing methods: a different audience and a
++              different job. Each one opens in a new tab.
+             </p>
+             <div className="mt-10">
+               <Applications />
+diff --git a/website/src/components/ui/applications.tsx b/website/src/components/ui/applications.tsx
+index 07475a1..f13b1c2 100644
+--- a/website/src/components/ui/applications.tsx
++++ b/website/src/components/ui/applications.tsx
+@@ -69,7 +69,7 @@ export function Applications() {
+               rel="noopener noreferrer"
+               className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-80"
+             >
+-              Open app
++              Open the patient app
+               <ArrowUpRight className="h-3.5 w-3.5" />
+             </a>
+             <a

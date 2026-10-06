@@ -1,0 +1,271 @@
+diff --git a/website/src/components/modality/ecg-explorer.tsx b/website/src/components/modality/ecg-explorer.tsx
+index a310025..f25702e 100644
+--- a/website/src/components/modality/ecg-explorer.tsx
++++ b/website/src/components/modality/ecg-explorer.tsx
+@@ -46,7 +46,6 @@ export function EcgExplorer() {
+       <ModalityHeader
+         current="ecg"
+         sourceNote={index.data?.source.note}
+-        source={session.data?.source}
+         device={session.data ? `${session.data.device.lead} · ${session.data.device.fs} Hz` : undefined}
+       />
+       {index.error && <p className="text-sm text-destructive">Couldn’t load the ECG data ({index.error}).</p>}
+@@ -213,7 +212,7 @@ function Dashboard({ session }: { session: EcgSession }) {
+ 
+   return (
+     <div className="flex flex-col gap-14">
+-      <AboutData modality="ecg" takeaway={ecgTakeaway(session)} />
++      <AboutData modality="ecg" />
+ 
+       <div className="flex flex-col gap-3">
+         <p className="text-xs text-muted-foreground">Drag widgets by their title to rearrange.</p>
+@@ -229,21 +228,6 @@ function Dashboard({ session }: { session: EcgSession }) {
+   );
+ }
+ 
+-/** "Heart rate went from 66 bpm at rest to 90 bpm in the city" — from the phase metrics. */
+-function ecgTakeaway(session: EcgSession) {
+-  const [first, second] = session.phases;
+-  const a = first && session.hrv.phases[first.name]?.mean_hr_bpm;
+-  const b = second && session.hrv.phases[second.name]?.mean_hr_bpm;
+-  if (a === undefined || b === undefined) return undefined;
+-  const label = (n: string) => (n.toLowerCase() === "rest" ? "at rest" : `during ${n.toLowerCase()} driving`);
+-  return (
+-    <>
+-      Heart rate went from <strong>{Math.round(a)} bpm</strong> {label(first.name)} to{" "}
+-      <strong>{Math.round(b)} bpm</strong> {label(second.name)}.
+-    </>
+-  );
+-}
+-
+ /** Raw on top, cleaned with beats below — the same window, stacked. */
+ function TracePair({ session, start }: { session: EcgSession; start: number }) {
+   const [ref, size] = useSize<HTMLDivElement>();
+diff --git a/website/src/components/modality/explain.tsx b/website/src/components/modality/explain.tsx
+index 278eb86..0266a08 100644
+--- a/website/src/components/modality/explain.tsx
++++ b/website/src/components/modality/explain.tsx
+@@ -34,32 +34,26 @@ export function Term({ name, children }: { name: keyof typeof TERMS | string; ch
+   );
+ }
+ 
+-/** Plain-language introduction above a data page's widgets. */
+-export function AboutData({ modality, takeaway }: { modality: ModalityKey; takeaway?: ReactNode }) {
++/** A short, general introduction above a data page's widgets. */
++export function AboutData({ modality }: { modality: ModalityKey }) {
+   const a = ABOUT[modality];
+   return (
+-    <section aria-labelledby="about-data" className="grid gap-6 rounded-3xl border border-border bg-card p-6 md:grid-cols-[1.1fr_1fr] md:p-8">
+-      <div className="flex flex-col gap-3">
+-        <h2 id="about-data" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
++    <section aria-labelledby="about-data" className="grid gap-5 rounded-3xl border border-border bg-card p-6 md:grid-cols-2 md:gap-10">
++      <div className="flex flex-col gap-2">
++        <h2 id="about-data" className="flex items-center gap-2 text-sm font-semibold">
++          <Lightbulb className="h-4 w-4 shrink-0" style={{ color: "var(--series-4)" }} aria-hidden="true" />
+           About this data
+         </h2>
+-        {takeaway && (
+-          <p className="flex gap-2 text-lg leading-snug md:text-xl">
+-            <Lightbulb className="mt-1 h-5 w-5 shrink-0" style={{ color: "var(--series-4)" }} aria-hidden="true" />
+-            <span>{takeaway}</span>
+-          </p>
+-        )}
+-        <p className="text-sm leading-relaxed">{a.recorded}</p>
+-        <p className="text-sm leading-relaxed text-muted-foreground">{a.source}</p>
++        <p className="leading-relaxed">{a.shows}</p>
+       </div>
+-      <div className="flex flex-col gap-3">
++      <div className="flex flex-col gap-2">
+         <h3 className="text-sm font-semibold">What to look for</h3>
+-        <ul className="flex list-disc flex-col gap-1.5 pl-5 text-sm leading-relaxed">
++        <ul className="flex list-disc flex-col gap-1 pl-5 text-sm leading-relaxed">
+           {a.lookFor.map((line) => (
+             <li key={line}>{line}</li>
+           ))}
+         </ul>
+-        <p className="text-xs leading-relaxed text-muted-foreground">{HOW_TO_READ}</p>
++        <p className="text-xs text-muted-foreground">{HOW_TO_READ}</p>
+       </div>
+     </section>
+   );
+diff --git a/website/src/components/modality/rppg-explorer.tsx b/website/src/components/modality/rppg-explorer.tsx
+index f38340d..aa0bf44 100644
+--- a/website/src/components/modality/rppg-explorer.tsx
++++ b/website/src/components/modality/rppg-explorer.tsx
+@@ -53,7 +53,6 @@ export function RppgExplorer() {
+       <ModalityHeader
+         current="rppg"
+         sourceNote={index.data?.source.note}
+-        source={session.data?.source}
+         device={session.data ? `${session.data.device.camera} · ${session.data.device.roi}` : undefined}
+       />
+       {index.error && <p className="text-sm text-destructive">Couldn’t load the rPPG data ({index.error}).</p>}
+@@ -221,7 +220,7 @@ function Dashboard({ session }: { session: RppgSession }) {
+ 
+   return (
+     <div className="flex flex-col gap-14">
+-      <AboutData modality="rppg" takeaway={rppgTakeaway(session, refHr)} />
++      <AboutData modality="rppg" />
+ 
+       <div className="flex flex-col gap-3">
+         <p className="text-xs text-muted-foreground">Drag widgets by their title to rearrange.</p>
+@@ -237,28 +236,6 @@ function Dashboard({ session }: { session: RppgSession }) {
+   );
+ }
+ 
+-/** "The camera read 75 bpm; the fingertip sensor read 72 — within 0.2 bpm on average." */
+-function rppgTakeaway(session: RppgSession, refHr?: number) {
+-  const hr = session.vitals.hr_bpm;
+-  if (hr === undefined) return undefined;
+-  const mae = session.scores.pos.maeBpm;
+-  if (refHr === undefined || mae === undefined) {
+-    return (
+-      <>
+-        Without touching the skin, the camera measured a heart rate of <strong>{Math.round(hr)} bpm</strong>.
+-      </>
+-    );
+-  }
+-  // second-by-second averages on both sides, so the two numbers are comparable
+-  const camHr = mean(session.track.pos) ?? hr;
+-  return (
+-    <>
+-      Without touching the skin, the camera’s heart rate stayed within <strong>{mae.toFixed(1)} bpm</strong> of a
+-      fingertip sensor on average ({camHr.toFixed(1)} vs {refHr.toFixed(1)} bpm).
+-    </>
+-  );
+-}
+-
+ /** Green channel on top (what the camera saw), extracted pulse below. */
+ function PulsePair({ session, start, method }: { session: RppgSession; start: number; method: RppgMethod }) {
+   const [ref, size] = useSize<HTMLDivElement>();
+diff --git a/website/src/components/modality/thermal-explorer.tsx b/website/src/components/modality/thermal-explorer.tsx
+index c98aa32..e6fd472 100644
+--- a/website/src/components/modality/thermal-explorer.tsx
++++ b/website/src/components/modality/thermal-explorer.tsx
+@@ -55,7 +55,6 @@ export function ThermalExplorer() {
+       <ModalityHeader
+         current="thermal"
+         sourceNote={index.data?.source.note}
+-        source={s?.source}
+         device={s ? `${s.device.model} · ${s.frames.width} × ${s.frames.height} shown` : undefined}
+       />
+       {index.error && <p className="text-sm text-destructive">Couldn’t load the thermal data ({index.error}).</p>}
+@@ -283,7 +282,7 @@ function Dashboard({ session, frames }: { session: ThermalSession; frames: Uint8
+ 
+   return (
+     <div className="flex flex-col gap-14">
+-      <AboutData modality="thermal" takeaway={thermalTakeaway(session)} />
++      <AboutData modality="thermal" />
+ 
+       <div className="flex flex-col gap-3">
+         <p className="text-xs text-muted-foreground">Drag widgets by their title to rearrange.</p>
+@@ -299,33 +298,6 @@ function Dashboard({ session, frames }: { session: ThermalSession; frames: Uint8
+   );
+ }
+ 
+-/** "The mouth cooled by 1.4 °C while drinking…" — the region that changed most. */
+-function thermalTakeaway(session: ThermalSession) {
+-  const { rateHz, roiMeanC } = session.series;
+-  const [before, during, after] = ["Before", "Drinking", "After"].map((n) => session.phases.find((p) => p.name === n));
+-  if (!before || !during) return undefined;
+-  const mean = (v: number[], p: { startS: number; endS: number }) => {
+-    const seg = v.slice(Math.floor(p.startS * rateHz), Math.ceil(p.endS * rateHz));
+-    return seg.reduce((a, x) => a + x, 0) / Math.max(1, seg.length);
+-  };
+-  const drops = session.rois
+-    .filter((r) => r.valid)
+-    .map((r) => {
+-      const v = roiMeanC[r.key];
+-      const b = mean(v, before);
+-      return { label: r.label, drop: b - mean(v, during), recovered: after ? b - mean(v, after) < 0.3 : false };
+-    })
+-    .sort((a, b) => b.drop - a.drop);
+-  const top = drops[0];
+-  if (!top || top.drop < 0.2) return undefined;
+-  return (
+-    <>
+-      The <strong>{top.label.toLowerCase()}</strong> cooled by <strong>{top.drop.toFixed(1)} °C</strong> while drinking
+-      {top.recovered ? ", then warmed back up." : "."}
+-    </>
+-  );
+-}
+-
+ /** Fits the 4:3 thermogram inside whatever space the widget leaves. */
+ function ThermalCanvas({
+   session,
+diff --git a/website/src/lib/explanations.ts b/website/src/lib/explanations.ts
+index 57ff446..9ca28a8 100644
+--- a/website/src/lib/explanations.ts
++++ b/website/src/lib/explanations.ts
+@@ -4,50 +4,43 @@
+ 
+ export type ModalityKey = "thermal" | "ecg" | "rppg";
+ 
++/** General, modality-level copy for the dashboard. Nothing here depends on
++ *  which recording is shown; recording specifics live in the details card. */
+ export type About = {
+-  /** one sentence: what was recorded */
+-  recorded: string;
+-  /** why this recording is shown */
+-  source: string;
+-  /** what a first-time visitor should notice */
++  /** what this kind of data is, in one or two sentences */
++  shows: string;
++  /** how to tell clean data apart on this page */
+   lookFor: string[];
+ };
+ 
+-export const HOW_TO_READ =
+-  "Each box is one view of the same recording. Hover a chart to read values, click the overview to move the close-up, and drag a box by its title to rearrange.";
++export const HOW_TO_READ = "Hover a chart to read values. Drag a box by its title to rearrange.";
+ 
+ export const ABOUT: Record<ModalityKey, About> = {
+   thermal: {
+-    recorded:
+-      "A 12-second thermal-camera video of a person drinking a cold glass of juice: every pixel is a skin or room temperature.",
+-    source:
+-      "A public-domain clip stands in until the study’s own thermal recordings are released. Its temperatures are rebuilt from the video’s colours, so treat the exact degrees as approximate.",
++    shows:
++      "A thermal camera measures the temperature of every point on the face. Emotion and stress change blood flow, which shows up as small temperature shifts around the nose, eyes and forehead.",
+     lookFor: [
+-      "The mouth region cools while the cold drink touches the lips, then warms back up.",
+-      "The face is clearly warmer than the room; the histogram shows these as two separate humps.",
+-      "In the study, the same per-region tracking picks up stress: the nose tip cools and the skin around the eyes warms.",
++      "Brighter colours are warmer skin.",
++      "Each tracked face region has its own line over time.",
++      "Smooth, steady lines mean a clean recording.",
+     ],
+   },
+   ecg: {
+-    recorded:
+-      "Five minutes of a driver’s heart activity (a chest ECG): the first part parked at rest, the rest driving through a city.",
+-    source:
+-      "A public research recording (MIT driver-stress study, via PhysioNet) stands in until the study’s own ECG recordings are released. Every number on this page comes from the study’s own analysis code.",
++    shows:
++      "An ECG records the heart’s electrical activity. Each sharp spike is one heartbeat, and the timing between spikes gives the heart rate.",
+     lookFor: [
+-      "The heart beats faster once city driving starts: compare the heart-rate chart before and after the line.",
+-      "The heartbeat also becomes more regular under stress: beat-to-beat variation roughly halves in the city.",
+-      "Skin conductance (light sweating) and shoulder muscle tension, recorded at the same time, jump at the same moment.",
++      "Clean data: tall, evenly shaped spikes on a flat baseline.",
++      "The coloured strip rates every 5 seconds: clean, irregular or affected by movement.",
++      "A tight average beat means the beats are consistent.",
+     ],
+   },
+   rppg: {
+-    recorded:
+-      "A pulse measured with no contact at all: an ordinary camera tracks tiny colour changes in the face as blood pumps through the skin.",
+-    source:
+-      "This sample is simulated, with a known pulse, so the page can show the method before the study’s own camera recordings are released. The analysis is the study’s real rPPG code; a fingertip pulse sensor serves as the reference.",
++    shows:
++      "rPPG measures the pulse with an ordinary camera: every heartbeat changes the skin’s colour very slightly, too little for the eye to see.",
+     lookFor: [
+-      "The camera’s heart rate closely follows the fingertip sensor’s, even though nothing touches the skin.",
+-      "When the head moves, the signal quality drops and the page says so instead of guessing.",
+-      "Breathing rate is read from the same pulse signal, with no chest sensor.",
++      "Clean data: a regular wave with one peak per heartbeat.",
++      "The dashed line is a fingertip pulse sensor, for comparison.",
++      "The coloured strip marks stretches where movement made the signal unreliable.",
+     ],
+   },
+ };

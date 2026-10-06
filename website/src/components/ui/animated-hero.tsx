@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
+import { ArrowDown } from "lucide-react";
 
 function Hero() {
   const [titleNumber, setTitleNumber] = useState(0);
@@ -66,9 +67,16 @@ function Hero() {
               emotional and cognitive state, for uses in mental health
               screening, driver monitoring, and human-computer interaction.
               Each session records thermal, ECG, EMG, and rPPG together —
-              explore the thermal and ECG data now, with EMG and rPPG to
-              follow.
+              explore sample data for all four.
             </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Button asChild size="lg" className="gap-2">
+              <a href="#sensors">
+                Explore the data
+                <ArrowDown className="size-4" aria-hidden="true" />
+              </a>
+            </Button>
           </div>
         </div>
       </div>

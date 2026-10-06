@@ -46,7 +46,7 @@ export function ModalityHeader({
           ) : (
             <span
               key={x.key}
-              className="cursor-default rounded-full border border-dashed border-border px-3.5 py-1.5 text-sm text-muted-foreground/60"
+              className="cursor-default rounded-full border border-dashed border-border px-3.5 py-1.5 text-sm text-muted-foreground"
             >
               {x.title} · soon
             </span>

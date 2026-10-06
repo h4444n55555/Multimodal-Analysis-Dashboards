@@ -1,0 +1,29 @@
+diff --git a/website/src/app/data-agreement/page.tsx b/website/src/app/data-agreement/page.tsx
+index 43aa364..8f7a680 100644
+--- a/website/src/app/data-agreement/page.tsx
++++ b/website/src/app/data-agreement/page.tsx
+@@ -12,9 +12,8 @@ export const metadata: Metadata = {
+ export default function DataAgreementPage() {
+   return (
+     <div className="flex flex-1 flex-col">
+-      <div className="print:hidden">
+-        <SiteNav />
+-      </div>
++      {/* not wrapped: a wrapper would confine the sticky nav and it would scroll away */}
++      <SiteNav />
+       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-14 print:py-0">
+         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Version {AGREEMENT_VERSION}</p>
+         <h1 className="mt-2 text-4xl tracking-tight">{AGREEMENT_TITLE}</h1>
+diff --git a/website/src/components/site-nav.tsx b/website/src/components/site-nav.tsx
+index 57df80d..b653d44 100644
+--- a/website/src/components/site-nav.tsx
++++ b/website/src/components/site-nav.tsx
+@@ -64,7 +64,7 @@ export function SiteNav() {
+   const onHome = pathname === "/";
+ 
+   return (
+-    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur">
++    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur print:hidden">
+       <div className="mx-auto grid h-16 w-full max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6">
+         <Link href="/" className="flex items-center justify-self-start">
+           <Image

@@ -5,8 +5,20 @@
 // Credentialed Health Data License 1.5.0, DEAP, MAHNOB-HCI). Have IIT Ropar's
 // ethics committee / legal office review it before real data is shared.
 
-export const AGREEMENT_VERSION = "1.0";
+export const AGREEMENT_VERSION = "1.1";
 export const AGREEMENT_TITLE = "MMAC Study Data Use Agreement";
+
+/** Default access period. v1.1 states it in the agreement instead of asking for it. */
+export const ACCESS_PERIOD = "12 months from approval, renewable on request";
+
+/** Plain-language summary shown above the full terms. The clauses below still govern. */
+export const SUMMARY = [
+  "Research and teaching only — no commercial use.",
+  "Never try to identify a participant.",
+  "Don’t pass the data on: anyone else who needs it applies separately.",
+  "Cite the MMAC study in anything you publish with it.",
+  "Delete it when your project or access period ends, or when we ask.",
+] as const;
 
 export type Clause = { title: string; text: string };
 
@@ -21,7 +33,7 @@ export const CLAUSES: Clause[] = [
   },
   {
     title: "No redistribution",
-    text: "I will not share, publish, sell or pass on the data or any copy of it — including to colleagues in my own institution who are not named in this request. I will not upload it to public repositories, shared cloud folders, or online tools and AI services that keep or learn from uploaded data.",
+    text: "I will not share, publish, sell or pass on the data or any copy of it — including to colleagues in my own institution; anyone else who needs the data applies separately. I will not upload it to public repositories, shared cloud folders, or online tools and AI services that keep or learn from uploaded data.",
   },
   {
     title: "Faces and images",
@@ -29,7 +41,7 @@ export const CLAUSES: Clause[] = [
   },
   {
     title: "Secure storage",
-    text: "I will keep the data on secure, access-controlled systems, limit access to the people named in this request, and protect it with appropriate technical measures such as encryption.",
+    text: "I will keep the data on secure, access-controlled systems, limit access to people working on the approved project, and protect it with appropriate technical measures such as encryption. I am responsible for everyone I give access to keeping these terms.",
   },
   {
     title: "Ethics and law",
@@ -45,7 +57,7 @@ export const CLAUSES: Clause[] = [
   },
   {
     title: "Retention and deletion",
-    text: "I will delete all copies of the data when the approved access period ends, when my project ends, or when the study team asks — whichever comes first — and confirm the deletion in writing.",
+    text: "Access lasts 12 months from approval and can be renewed on request. I will delete all copies of the data when the access period ends, when my project ends, or when the study team asks — whichever comes first — and confirm the deletion in writing.",
   },
   {
     title: "No warranty",
@@ -80,14 +92,12 @@ export const ETHICS_OPTIONS = [
   "Not required at my institution for this use",
 ] as const;
 
-export const DURATIONS = ["6 months", "12 months", "24 months"] as const;
-
 /** What each modality's release contains, shown in the form. */
 export const MODALITY_CONTENTS: Record<string, string> = {
   thermal: "Facial thermal video (°C per pixel), face-region time series, recording conditions",
   ecg: "Raw and filtered single-lead ECG, detected beats and intervals, HRV and signal quality",
-  emg: "Surface EMG recordings — not yet released",
-  rppg: "Face video for remote pulse, with reference ECG — not yet released",
+  emg: "Raw and filtered surface EMG from forearm, wrist and facial electrodes, activity envelopes and per-electrode signal quality",
+  rppg: "Face colour traces and extracted pulse waveforms, beats, HRV and breathing, with reference pulse; face video on request",
 };
 
 /** Personal webmail — institutional addresses are asked for instead. */

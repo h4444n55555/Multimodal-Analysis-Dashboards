@@ -5,8 +5,7 @@ import { TestimonialCarousel } from "@/components/ui/profile-card-testimonial-ca
 import { VerticalTabs } from "@/components/ui/vertical-tabs";
 import MultimodalPipeline from "@/components/ui/pipeline-visualization";
 import { TaskBento } from "@/components/ui/task-bento";
-import { Applications } from "@/components/ui/applications";
-import Text3DFlip from "@/registry/magicui/text-3d-flip";
+import { Applications } from "@/components/ui/applications";import Text3DFlip from "@/registry/magicui/text-3d-flip";
 import { Highlighter } from "@/registry/magicui/highlighter";
 
 export default function Home() {
@@ -103,12 +102,15 @@ export default function Home() {
         {/* What we have built with the data */}
         <section id="apps" className="scroll-mt-24">
           <div className="mx-auto w-full max-w-7xl px-6 py-24">
-            <h2 className="text-2xl font-semibold tracking-tight">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Applications
+            </p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
               Built with the data
             </h2>
-            <p className="mt-1 max-w-xl text-muted-foreground">
-              Tools we&apos;ve developed on top of these recordings. Each one
-              opens in a new tab.
+            <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
+              Tools that put the study&apos;s sensing methods to work for people
+              beyond researchers. Each one links to its official home.
             </p>
             <div className="mt-10">
               <Applications />

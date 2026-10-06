@@ -1,0 +1,19 @@
+{
+  "modality": "emg",
+  "source": {
+    "kind": "public",
+    "note": "PhysioNet GRABMyo (CC BY 4.0), session 1, participant 1: rest and hand close."
+  },
+  "sessions": [
+    {
+      "id": "S01",
+      "subject": {
+        "id": "GRABMyo · participant 1",
+        "ageBand": "24–35",
+        "sex": "—"
+      },
+      "label": "Rest → hand close",
+      "durationS": 10.0
+    }
+  ]
+}

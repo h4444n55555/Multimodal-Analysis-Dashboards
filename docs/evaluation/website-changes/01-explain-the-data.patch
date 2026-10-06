@@ -1,0 +1,506 @@
+diff --git a/website/src/components/modality/ecg-explorer.tsx b/website/src/components/modality/ecg-explorer.tsx
+index 3d39779..b1ac062 100644
+--- a/website/src/components/modality/ecg-explorer.tsx
++++ b/website/src/components/modality/ecg-explorer.tsx
+@@ -1,6 +1,6 @@
+ "use client";
+ 
+-import { useMemo, useState } from "react";
++import { cloneElement, isValidElement, useMemo, useState, type ReactElement } from "react";
+ import Link from "next/link";
+ import { useAsset } from "@/lib/use-json";
+ import { dataUrl, type DataIndex, type EcgSession, type QualityStatus, type SeriesBlock } from "@/lib/sample-data";
+@@ -9,6 +9,8 @@ import { ModalityHeader, StatusBadge, fmt } from "@/components/modality/kit";
+ import { BigNumber, Facts, WidgetShell } from "@/components/modality/widget";
+ import { RequestAccess } from "@/components/modality/request-access";
+ import { DraggableWidgetGrid, type WidgetItem } from "@/components/ui/draggable-widget-grid";
++import { AboutData, Term } from "@/components/modality/explain";
++import { CAPTIONS } from "@/lib/explanations";
+ 
+ const WINDOW_S = 10;
+ const STATUS_COLOR: Record<QualityStatus, string> = {
+@@ -78,9 +80,9 @@ function Dashboard({ session }: { session: EcgSession }) {
+           <WidgetShell title="Variability" note="time between beats">
+             <Facts
+               rows={[
+-                ["RMSSD", `${fmt(h.rmssd_ms, 0)} ms`],
+-                ["SDNN", `${fmt(h.sdnn_ms, 0)} ms`],
+-                ["pNN50", `${fmt(h.pnn50_pct, 0)}%`],
++                [<Term key="rmssd" name="RMSSD" />, `${fmt(h.rmssd_ms, 0)} ms`],
++                [<Term key="sdnn" name="SDNN" />, `${fmt(h.sdnn_ms, 0)} ms`],
++                [<Term key="pnn50" name="pNN50" />, `${fmt(h.pnn50_pct, 0)}%`],
+               ]}
+             />
+           </WidgetShell>
+@@ -189,7 +191,12 @@ function Dashboard({ session }: { session: EcgSession }) {
+         return (
+           <WidgetShell
+             title="Rhythm spectrum"
+-            note={`LF/HF ${fmt(session.hrv.frequency.lf_hf_ratio, 2)}${session.hrv.frequency.shortRecord ? " · indicative (< 5 min)" : ""}`}
++            note={
++              <>
++                <Term name="LF/HF" /> {fmt(session.hrv.frequency.lf_hf_ratio, 2)}
++                {session.hrv.frequency.shortRecord ? " · indicative (< 5 min)" : ""}
++              </>
++            }
+           >
+             <Spectrum session={session} />
+           </WidgetShell>
+@@ -199,11 +206,18 @@ function Dashboard({ session }: { session: EcgSession }) {
+     }
+   };
+ 
++  const withCaption = (item: WidgetItem) => {
++    const el = render(item);
++    return isValidElement(el) ? cloneElement(el as ReactElement<{ caption?: string }>, { caption: CAPTIONS.ecg[item.id] }) : el;
++  };
++
+   return (
+     <div className="flex flex-col gap-14">
++      <AboutData modality="ecg" takeaway={ecgTakeaway(session)} />
++
+       <div className="flex flex-col gap-3">
+         <p className="text-xs text-muted-foreground">Drag widgets by their title to rearrange.</p>
+-        <DraggableWidgetGrid items={WIDGETS} renderItem={render} maxColumns={4} cellSize={280} gap={14} />
++        <DraggableWidgetGrid items={WIDGETS} renderItem={withCaption} maxColumns={4} cellSize={280} gap={14} />
+       </div>
+ 
+       <RequestAccess />
+@@ -215,6 +229,21 @@ function Dashboard({ session }: { session: EcgSession }) {
+   );
+ }
+ 
++/** "Heart rate went from 66 bpm at rest to 90 bpm in the city" — from the phase metrics. */
++function ecgTakeaway(session: EcgSession) {
++  const [first, second] = session.phases;
++  const a = first && session.hrv.phases[first.name]?.mean_hr_bpm;
++  const b = second && session.hrv.phases[second.name]?.mean_hr_bpm;
++  if (a === undefined || b === undefined) return undefined;
++  const label = (n: string) => (n.toLowerCase() === "rest" ? "at rest" : `during ${n.toLowerCase()} driving`);
++  return (
++    <>
++      Heart rate went from <strong>{Math.round(a)} bpm</strong> {label(first.name)} to{" "}
++      <strong>{Math.round(b)} bpm</strong> {label(second.name)}.
++    </>
++  );
++}
++
+ /** Raw on top, cleaned with beats below — the same window, stacked. */
+ function TracePair({ session, start }: { session: EcgSession; start: number }) {
+   const [ref, size] = useSize<HTMLDivElement>();
+diff --git a/website/src/components/modality/explain.tsx b/website/src/components/modality/explain.tsx
+new file mode 100644
+index 0000000..278eb86
+--- /dev/null
++++ b/website/src/components/modality/explain.tsx
+@@ -0,0 +1,66 @@
++"use client";
++
++import type { ReactNode } from "react";
++import { Tooltip } from "radix-ui";
++import { Lightbulb } from "lucide-react";
++import { ABOUT, HOW_TO_READ, TERMS, type ModalityKey } from "@/lib/explanations";
++
++/** A jargon word with its plain definition on hover or keyboard focus. */
++export function Term({ name, children }: { name: keyof typeof TERMS | string; children?: ReactNode }) {
++  const definition = TERMS[name];
++  if (!definition) return <>{children ?? name}</>;
++  return (
++    <Tooltip.Provider delayDuration={150}>
++      <Tooltip.Root>
++        <Tooltip.Trigger asChild>
++          <span
++            tabIndex={0}
++            className="cursor-help underline decoration-dotted decoration-muted-foreground/70 underline-offset-[3px] outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50"
++          >
++            {children ?? name}
++          </span>
++        </Tooltip.Trigger>
++        <Tooltip.Portal>
++          <Tooltip.Content
++            side="top"
++            sideOffset={6}
++            className="z-50 max-w-64 rounded-md border border-border bg-popover px-2.5 py-1.5 text-xs leading-snug text-popover-foreground shadow-md"
++          >
++            {definition}
++          </Tooltip.Content>
++        </Tooltip.Portal>
++      </Tooltip.Root>
++    </Tooltip.Provider>
++  );
++}
++
++/** Plain-language introduction above a data page's widgets. */
++export function AboutData({ modality, takeaway }: { modality: ModalityKey; takeaway?: ReactNode }) {
++  const a = ABOUT[modality];
++  return (
++    <section aria-labelledby="about-data" className="grid gap-6 rounded-3xl border border-border bg-card p-6 md:grid-cols-[1.1fr_1fr] md:p-8">
++      <div className="flex flex-col gap-3">
++        <h2 id="about-data" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
++          About this data
++        </h2>
++        {takeaway && (
++          <p className="flex gap-2 text-lg leading-snug md:text-xl">
++            <Lightbulb className="mt-1 h-5 w-5 shrink-0" style={{ color: "var(--series-4)" }} aria-hidden="true" />
++            <span>{takeaway}</span>
++          </p>
++        )}
++        <p className="text-sm leading-relaxed">{a.recorded}</p>
++        <p className="text-sm leading-relaxed text-muted-foreground">{a.source}</p>
++      </div>
++      <div className="flex flex-col gap-3">
++        <h3 className="text-sm font-semibold">What to look for</h3>
++        <ul className="flex list-disc flex-col gap-1.5 pl-5 text-sm leading-relaxed">
++          {a.lookFor.map((line) => (
++            <li key={line}>{line}</li>
++          ))}
++        </ul>
++        <p className="text-xs leading-relaxed text-muted-foreground">{HOW_TO_READ}</p>
++      </div>
++    </section>
++  );
++}
+diff --git a/website/src/components/modality/rppg-explorer.tsx b/website/src/components/modality/rppg-explorer.tsx
+index 31a7599..97b1f91 100644
+--- a/website/src/components/modality/rppg-explorer.tsx
++++ b/website/src/components/modality/rppg-explorer.tsx
+@@ -1,6 +1,6 @@
+ "use client";
+ 
+-import { useMemo, useState } from "react";
++import { cloneElement, isValidElement, useMemo, useState, type ReactElement } from "react";
+ import Link from "next/link";
+ import { useAsset } from "@/lib/use-json";
+ import { dataUrl, type DataIndex, type QualityStatus, type RppgMethod, type RppgSession } from "@/lib/sample-data";
+@@ -9,6 +9,8 @@ import { ModalityHeader, Segmented, StatusBadge, fmt } from "@/components/modali
+ import { BigNumber, Facts, WidgetShell } from "@/components/modality/widget";
+ import { RequestAccess } from "@/components/modality/request-access";
+ import { DraggableWidgetGrid, type WidgetItem } from "@/components/ui/draggable-widget-grid";
++import { AboutData, Term } from "@/components/modality/explain";
++import { CAPTIONS } from "@/lib/explanations";
+ 
+ const WINDOW_S = 10;
+ const STATUS_COLOR: Record<QualityStatus, string> = {
+@@ -137,7 +139,7 @@ function Dashboard({ session }: { session: RppgSession }) {
+                 <StatusBadge status={snrLabel.status} label={snrLabel.word} />
+               </p>
+               <p className="text-xs text-muted-foreground">
+-                {fmt(v.snr_db, 1)} dB · below 1 dB nothing is reported
++                <Term name="SNR" /> {fmt(v.snr_db, 1)} dB · below 1 dB nothing is reported
+               </p>
+             </div>
+           </WidgetShell>
+@@ -147,8 +149,8 @@ function Dashboard({ session }: { session: RppgSession }) {
+           <WidgetShell title="Variability" note="time between beats">
+             <Facts
+               rows={[
+-                ["RMSSD", `${fmt(v.rmssd_ms, 0)} ms`],
+-                ["SDNN", `${fmt(v.sdnn_ms, 0)} ms`],
++                [<Term key="rmssd" name="RMSSD" />, `${fmt(v.rmssd_ms, 0)} ms`],
++                [<Term key="sdnn" name="SDNN" />, `${fmt(v.sdnn_ms, 0)} ms`],
+                 ["Left out", `${fmt(v.artifact_pct, 0)}% of beats`],
+               ]}
+             />
+@@ -187,8 +189,8 @@ function Dashboard({ session }: { session: RppgSession }) {
+             <Facts
+               rows={[
+                 ["Blood pressure", "needs a cuff reading"],
+-                ["SpO₂ %", "needs an oximeter reading"],
+-                ["SpO₂ ratio R", fmt(v.ratio_of_ratios, 2)],
++                [<Term key="spo2" name="SpO₂">SpO₂ %</Term>, "needs an oximeter reading"],
++                [<Term key="spo2r" name="SpO₂">SpO₂ ratio R</Term>, fmt(v.ratio_of_ratios, 2)],
+               ]}
+             />
+           </WidgetShell>
+@@ -212,11 +214,18 @@ function Dashboard({ session }: { session: RppgSession }) {
+     }
+   };
+ 
++  const withCaption = (item: WidgetItem) => {
++    const el = render(item);
++    return isValidElement(el) ? cloneElement(el as ReactElement<{ caption?: string }>, { caption: CAPTIONS.rppg[item.id] }) : el;
++  };
++
+   return (
+     <div className="flex flex-col gap-14">
++      <AboutData modality="rppg" takeaway={rppgTakeaway(session, refHr)} />
++
+       <div className="flex flex-col gap-3">
+         <p className="text-xs text-muted-foreground">Drag widgets by their title to rearrange.</p>
+-        <DraggableWidgetGrid items={WIDGETS} renderItem={render} maxColumns={4} cellSize={280} gap={14} />
++        <DraggableWidgetGrid items={WIDGETS} renderItem={withCaption} maxColumns={4} cellSize={280} gap={14} />
+       </div>
+ 
+       <RequestAccess />
+@@ -228,6 +237,28 @@ function Dashboard({ session }: { session: RppgSession }) {
+   );
+ }
+ 
++/** "The camera read 75 bpm; the fingertip sensor read 72 — within 0.2 bpm on average." */
++function rppgTakeaway(session: RppgSession, refHr?: number) {
++  const hr = session.vitals.hr_bpm;
++  if (hr === undefined) return undefined;
++  const mae = session.scores.pos.maeBpm;
++  if (refHr === undefined || mae === undefined) {
++    return (
++      <>
++        Without touching the skin, the camera measured a heart rate of <strong>{Math.round(hr)} bpm</strong>.
++      </>
++    );
++  }
++  // second-by-second averages on both sides, so the two numbers are comparable
++  const camHr = mean(session.track.pos) ?? hr;
++  return (
++    <>
++      Without touching the skin, the camera’s heart rate stayed within <strong>{mae.toFixed(1)} bpm</strong> of a
++      fingertip sensor on average ({camHr.toFixed(1)} vs {refHr.toFixed(1)} bpm).
++    </>
++  );
++}
++
+ /** Green channel on top (what the camera saw), extracted pulse below. */
+ function PulsePair({ session, start, method }: { session: RppgSession; start: number; method: RppgMethod }) {
+   const [ref, size] = useSize<HTMLDivElement>();
+diff --git a/website/src/components/modality/thermal-explorer.tsx b/website/src/components/modality/thermal-explorer.tsx
+index 43f3239..a7d2503 100644
+--- a/website/src/components/modality/thermal-explorer.tsx
++++ b/website/src/components/modality/thermal-explorer.tsx
+@@ -1,6 +1,6 @@
+ "use client";
+ 
+-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
++import { cloneElement, isValidElement, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+ import Link from "next/link";
+ import { Pause, Play } from "lucide-react";
+ import { useAsset } from "@/lib/use-json";
+@@ -11,6 +11,8 @@ import { ModalityHeader, Segmented } from "@/components/modality/kit";
+ import { Facts, WidgetShell } from "@/components/modality/widget";
+ import { RequestAccess } from "@/components/modality/request-access";
+ import { DraggableWidgetGrid, type WidgetItem } from "@/components/ui/draggable-widget-grid";
++import { AboutData } from "@/components/modality/explain";
++import { CAPTIONS } from "@/lib/explanations";
+ 
+ // Region identity follows the fixed categorical order (validated slots 1-4)
+ const ROI_COLOR: Record<string, string> = {
+@@ -274,11 +276,18 @@ function Dashboard({ session, frames }: { session: ThermalSession; frames: Uint8
+     }
+   };
+ 
++  const withCaption = (item: WidgetItem) => {
++    const el = render(item);
++    return isValidElement(el) ? cloneElement(el as ReactElement<{ caption?: string }>, { caption: CAPTIONS.thermal[item.id] }) : el;
++  };
++
+   return (
+     <div className="flex flex-col gap-14">
++      <AboutData modality="thermal" takeaway={thermalTakeaway(session)} />
++
+       <div className="flex flex-col gap-3">
+         <p className="text-xs text-muted-foreground">Drag widgets by their title to rearrange.</p>
+-        <DraggableWidgetGrid items={WIDGETS} renderItem={render} maxColumns={4} cellSize={280} gap={14} />
++        <DraggableWidgetGrid items={WIDGETS} renderItem={withCaption} maxColumns={4} cellSize={280} gap={14} />
+       </div>
+ 
+       <RequestAccess />
+@@ -290,6 +299,33 @@ function Dashboard({ session, frames }: { session: ThermalSession; frames: Uint8
+   );
+ }
+ 
++/** "The mouth cooled by 1.4 °C while drinking…" — the region that changed most. */
++function thermalTakeaway(session: ThermalSession) {
++  const { rateHz, roiMeanC } = session.series;
++  const [before, during, after] = ["Before", "Drinking", "After"].map((n) => session.phases.find((p) => p.name === n));
++  if (!before || !during) return undefined;
++  const mean = (v: number[], p: { startS: number; endS: number }) => {
++    const seg = v.slice(Math.floor(p.startS * rateHz), Math.ceil(p.endS * rateHz));
++    return seg.reduce((a, x) => a + x, 0) / Math.max(1, seg.length);
++  };
++  const drops = session.rois
++    .filter((r) => r.valid)
++    .map((r) => {
++      const v = roiMeanC[r.key];
++      const b = mean(v, before);
++      return { label: r.label, drop: b - mean(v, during), recovered: after ? b - mean(v, after) < 0.3 : false };
++    })
++    .sort((a, b) => b.drop - a.drop);
++  const top = drops[0];
++  if (!top || top.drop < 0.2) return undefined;
++  return (
++    <>
++      The <strong>{top.label.toLowerCase()}</strong> cooled by <strong>{top.drop.toFixed(1)} °C</strong> while drinking
++      {top.recovered ? ", then warmed back up." : "."}
++    </>
++  );
++}
++
+ /** Fits the 4:3 thermogram inside whatever space the widget leaves. */
+ function ThermalCanvas({
+   session,
+diff --git a/website/src/components/modality/widget.tsx b/website/src/components/modality/widget.tsx
+index 7cf7865..e8dd2d0 100644
+--- a/website/src/components/modality/widget.tsx
++++ b/website/src/components/modality/widget.tsx
+@@ -11,12 +11,15 @@ import { cn } from "@/lib/utils";
+ export function WidgetShell({
+   title,
+   note,
++  caption,
+   actions,
+   children,
+   className,
+ }: {
+   title: string;
+   note?: ReactNode;
++  /** one plain-language line under the chart: what this widget shows */
++  caption?: string;
+   actions?: ReactNode;
+   children: ReactNode;
+   className?: string;
+@@ -34,6 +37,11 @@ export function WidgetShell({
+         {actions}
+       </div>
+       <div className={cn("relative min-h-0 flex-1", className)}>{children}</div>
++      {caption && (
++        <p className="mt-2 shrink-0 border-t border-border/60 pt-2 text-xs leading-snug text-foreground/80">
++          {caption}
++        </p>
++      )}
+     </div>
+   );
+ }
+@@ -52,11 +60,11 @@ export function BigNumber({ value, unit, sub }: { value: ReactNode; unit?: strin
+ }
+ 
+ /** Key/value facts about a recording. */
+-export function Facts({ rows }: { rows: [string, ReactNode][] }) {
++export function Facts({ rows }: { rows: [ReactNode, ReactNode][] }) {
+   return (
+     <dl className="grid h-full content-end gap-y-1.5 text-sm">
+-      {rows.map(([k, v]) => (
+-        <div key={k} className="flex items-baseline justify-between gap-3 border-b border-border/60 pb-1.5 last:border-0">
++      {rows.map(([k, v], i) => (
++        <div key={i} className="flex items-baseline justify-between gap-3 border-b border-border/60 pb-1.5 last:border-0">
+           <dt className="text-muted-foreground">{k}</dt>
+           <dd className="text-right font-medium tabular-nums">{v}</dd>
+         </div>
+diff --git a/website/src/lib/explanations.ts b/website/src/lib/explanations.ts
+new file mode 100644
+index 0000000..57ff446
+--- /dev/null
++++ b/website/src/lib/explanations.ts
+@@ -0,0 +1,115 @@
++// Plain-language copy for the data pages: what each recording is, what each
++// widget shows, and what the jargon means. Kept in one file so it can be
++// reviewed and edited without touching the dashboards.
++
++export type ModalityKey = "thermal" | "ecg" | "rppg";
++
++export type About = {
++  /** one sentence: what was recorded */
++  recorded: string;
++  /** why this recording is shown */
++  source: string;
++  /** what a first-time visitor should notice */
++  lookFor: string[];
++};
++
++export const HOW_TO_READ =
++  "Each box is one view of the same recording. Hover a chart to read values, click the overview to move the close-up, and drag a box by its title to rearrange.";
++
++export const ABOUT: Record<ModalityKey, About> = {
++  thermal: {
++    recorded:
++      "A 12-second thermal-camera video of a person drinking a cold glass of juice: every pixel is a skin or room temperature.",
++    source:
++      "A public-domain clip stands in until the study’s own thermal recordings are released. Its temperatures are rebuilt from the video’s colours, so treat the exact degrees as approximate.",
++    lookFor: [
++      "The mouth region cools while the cold drink touches the lips, then warms back up.",
++      "The face is clearly warmer than the room; the histogram shows these as two separate humps.",
++      "In the study, the same per-region tracking picks up stress: the nose tip cools and the skin around the eyes warms.",
++    ],
++  },
++  ecg: {
++    recorded:
++      "Five minutes of a driver’s heart activity (a chest ECG): the first part parked at rest, the rest driving through a city.",
++    source:
++      "A public research recording (MIT driver-stress study, via PhysioNet) stands in until the study’s own ECG recordings are released. Every number on this page comes from the study’s own analysis code.",
++    lookFor: [
++      "The heart beats faster once city driving starts: compare the heart-rate chart before and after the line.",
++      "The heartbeat also becomes more regular under stress: beat-to-beat variation roughly halves in the city.",
++      "Skin conductance (light sweating) and shoulder muscle tension, recorded at the same time, jump at the same moment.",
++    ],
++  },
++  rppg: {
++    recorded:
++      "A pulse measured with no contact at all: an ordinary camera tracks tiny colour changes in the face as blood pumps through the skin.",
++    source:
++      "This sample is simulated, with a known pulse, so the page can show the method before the study’s own camera recordings are released. The analysis is the study’s real rPPG code; a fingertip pulse sensor serves as the reference.",
++    lookFor: [
++      "The camera’s heart rate closely follows the fingertip sensor’s, even though nothing touches the skin.",
++      "When the head moves, the signal quality drops and the page says so instead of guessing.",
++      "Breathing rate is read from the same pulse signal, with no chest sensor.",
++    ],
++  },
++};
++
++/** One line under each widget, saying what it shows in everyday words. */
++export const CAPTIONS: Record<ModalityKey, Record<string, string>> = {
++  thermal: {
++    video: "The camera’s view: brighter colours are warmer. The boxes mark the face regions tracked below.",
++    now: "The average temperature inside each box at this moment of the video.",
++    hist: "How many pixels sit at each temperature. The left hump is the room, the right one the face.",
++    series: "How each face region’s temperature changes through the video. Switch to “Change” to compare them.",
++    ranges: "The coolest-to-warmest span of each region over the whole video; the dot is its average.",
++    frame: "Quick numbers for the frame on screen: the hottest pixel, the face’s average and how much of the view is face.",
++    facts: "The camera and the clip this page is built from.",
++  },
++  ecg: {
++    trace: "The heart’s electrical signal as recorded (top) and after noise is removed (bottom). Each dot is one heartbeat.",
++    "hr-now": "Average beats per minute over the whole five minutes.",
++    hrv: "How much the time between beats varies. More variation usually means a more relaxed body.",
++    overview: "The whole five minutes at a glance. The coloured strip shows how clean the signal is in each 5-second stretch.",
++    drive: "The entire 84-minute drive this excerpt comes from, with rest, city and highway sections.",
++    hr: "Heart rate beat by beat. Watch it climb after city driving starts.",
++    resp: "Chest movement from a breathing belt worn at the same time; each wave is one breath.",
++    skin: "Skin conductance rises when we sweat slightly, a classic sign of stress or alertness.",
++    quality: "Whether the recording is clean enough to trust, and how many beats were left out.",
++    beat: "Every heartbeat laid on top of each other and averaged: the classic heartbeat shape.",
++    poincare: "Each dot is one gap between beats plotted against the next. A tighter cloud means a steadier rhythm.",
++    spectrum: "Which slow rhythms drive the changes in heart rate: breathing shows up on the right (HF), stress-linked rhythms on the left (LF).",
++    facts: "Where this recording comes from and what else was measured with it.",
++    emg: "Shoulder muscle tension recorded at the same time; it tends to rise with stress.",
++  },
++  rppg: {
++    pulse: "Top: the face’s average green colour, barely changing. Bottom: the pulse extracted from it, with the fingertip sensor dashed.",
++    "hr-now": "Heart rate measured by the camera alone, with the fingertip sensor’s value for comparison.",
++    breathing: "Breaths per minute, read from small rhythmic changes in the pulse signal.",
++    overview: "The whole recording at a glance. The strip shows how trustworthy each 5-second stretch is.",
++    hr: "The camera’s heart rate (solid) against the fingertip sensor (dashed), updated every second.",
++    methods: "Three standard recipes for turning face colour into a pulse, scored against the fingertip sensor.",
++    quality: "How strongly the pulse stands out from noise. Below the floor, the page shows nothing rather than a guess.",
++    hrv: "How much the time between beats varies, after unreliable beats are left out.",
++    rgb: "The raw face colour in red, green and blue. The pulse is a tiny ripple; head movement causes the big swings.",
++    channels: "How strongly each colour pulses. Blood absorbs green light most, so green should be strongest.",
++    beat: "All pulses averaged into one shape, rising quickly and falling slowly.",
++    spectrum: "Which beat speeds are present in the signal. The tallest peak is the heart rate.",
++    withheld: "Measures a camera cannot give reliably without first checking against a real device.",
++    facts: "The camera, the length of the recording and the reference used.",
++  },
++};
++
++/** Short definitions shown on hover or keyboard focus. */
++export const TERMS: Record<string, string> = {
++  RMSSD: "Typical change in time from one heartbeat to the next, in milliseconds. Higher usually means more relaxed.",
++  SDNN: "Overall spread of the times between beats, in milliseconds. A broad measure of heart-rate variability.",
++  pNN50: "Share of neighbouring beats whose timing differs by more than 50 ms.",
++  HRV: "Heart-rate variability: how much the time between heartbeats changes. A healthy, relaxed heart varies more.",
++  "LF/HF": "Balance between slow (LF) and breathing-speed (HF) rhythms in heart rate. Often read as stress versus rest.",
++  SNR: "Signal-to-noise ratio: how strongly the pulse stands out from everything else, in decibels (dB).",
++  POS: "Plane-Orthogonal-to-Skin: a recipe that cancels skin tone and lighting to isolate the pulse.",
++  CHROM: "Chrominance method: combines colour differences so that glare on the skin cancels out.",
++  Green: "Uses only the green channel, where blood absorbs most light. Simple, but sensitive to glare and movement.",
++  "SpO₂": "Blood oxygen saturation: the share of oxygen-carrying blood. A camera can only estimate it after calibration.",
++  Perfusion: "How much blood reaches the skin being measured, as the pulsing share of the colour signal.",
++  ECG: "Electrocardiogram: the heart’s electrical activity, recorded from electrodes on the chest.",
++  rPPG: "Remote photoplethysmography: measuring the pulse from skin-colour changes in ordinary video.",
++};

@@ -1,0 +1,419 @@
+diff --git a/website/src/components/modality/rppg-explorer.tsx b/website/src/components/modality/rppg-explorer.tsx
+index aa0bf44..9cea86e 100644
+--- a/website/src/components/modality/rppg-explorer.tsx
++++ b/website/src/components/modality/rppg-explorer.tsx
+@@ -5,8 +5,8 @@ import Link from "next/link";
+ import { useAsset } from "@/lib/use-json";
+ import { dataUrl, type DataIndex, type QualityStatus, type RppgMethod, type RppgSession } from "@/lib/sample-data";
+ import { ChartFrame, Legend, Tooltip, linePath, linear, niceTicks, extent, useSize } from "@/components/viz/chart";
+-import { ModalityHeader, Segmented, StatusBadge, fmt } from "@/components/modality/kit";
+-import { BigNumber, Facts, WidgetShell } from "@/components/modality/widget";
++import { ModalityHeader, StatusBadge, fmt } from "@/components/modality/kit";
++import { BigNumber, WidgetShell } from "@/components/modality/widget";
+ import { RequestAccess } from "@/components/modality/request-access";
+ import { DraggableWidgetGrid, type WidgetItem } from "@/components/ui/draggable-widget-grid";
+ import { AboutData, Term } from "@/components/modality/explain";
+@@ -19,28 +19,14 @@ const STATUS_COLOR: Record<QualityStatus, string> = {
+   critical: "var(--status-critical)",
+ };
+ const METHOD_LABEL: Record<RppgMethod, string> = { pos: "POS", chrom: "CHROM", green: "Green" };
+-const METHOD_OPTIONS = (["pos", "chrom", "green"] as const).map((m) => ({ value: m, label: METHOD_LABEL[m] }));
+-const CHANNELS = [
+-  { key: "red", label: "Red", color: "var(--status-critical)" },
+-  { key: "green", label: "Green", color: "var(--series-3)" },
+-  { key: "blue", label: "Blue", color: "var(--series-1)" },
+-] as const;
+-
++// Kept to what shows how clean the recording is (Lab 7 review).
+ const WIDGETS: WidgetItem[] = [
+   { id: "pulse", size: "lg", label: "Face colour to pulse" },
+   { id: "hr-now", size: "sm", label: "Heart rate" },
+-  { id: "breathing", size: "sm", label: "Breathing" },
++  { id: "quality", size: "sm", label: "Signal quality" },
+   { id: "overview", size: "wide", label: "Recording overview and signal quality" },
+   { id: "hr", size: "wide", label: "Heart rate against the oximeter" },
+-  { id: "methods", size: "wide", label: "Extraction methods compared" },
+-  { id: "quality", size: "sm", label: "Signal quality" },
+-  { id: "hrv", size: "sm", label: "Heart-rate variability" },
+-  { id: "rgb", size: "wide", label: "Raw face colour" },
+-  { id: "channels", size: "sm", label: "Pulse per colour channel" },
+-  { id: "beat", size: "sm", label: "Average pulse shape" },
+-  { id: "spectrum", size: "wide", label: "Pulse spectrum" },
+-  { id: "withheld", size: "sm", label: "Calibrated-only measures" },
+-  { id: "facts", size: "sm", label: "Recording details" },
++  { id: "beat", size: "wide", label: "Average pulse shape" },
+ ];
+ 
+ export function RppgExplorer() {
+@@ -63,7 +49,8 @@ export function RppgExplorer() {
+ 
+ function Dashboard({ session }: { session: RppgSession }) {
+   const [windowStart, setWindowStart] = useState(0);
+-  const [method, setMethod] = useState<RppgMethod>("pos");
++  // one extraction method on the dashboard; POS scores cleanest on this data
++  const method: RppgMethod = "pos";
+   const v = session.vitals;
+   const refHr = useMemo(() => mean(session.track.reference), [session.track.reference]);
+   const moveWindow = (center: number) =>
+@@ -76,12 +63,7 @@ function Dashboard({ session }: { session: RppgSession }) {
+         return (
+           <WidgetShell
+             title="Face colour → pulse"
+-            note={`${windowStart.toFixed(0)}–${(windowStart + WINDOW_S).toFixed(0)} s · ${METHOD_LABEL[method]}${method === "pos" ? ", beats marked" : ""}`}
+-            actions={
+-              <div data-no-drag>
+-                <Segmented label="Extraction method" options={METHOD_OPTIONS} value={method} onChange={setMethod} />
+-              </div>
+-            }
++            note={`${windowStart.toFixed(0)}–${(windowStart + WINDOW_S).toFixed(0)} s · beats marked`}
+           >
+             <PulsePair session={session} start={windowStart} method={method} />
+           </WidgetShell>
+@@ -96,12 +78,6 @@ function Dashboard({ session }: { session: RppgSession }) {
+             />
+           </WidgetShell>
+         );
+-      case "breathing":
+-        return (
+-          <WidgetShell title="Breathing" note="read from the pulse, no chest sensor">
+-            <BigNumber value={fmt(v.rr_brpm, 0)} unit="/min" sub={cueNote(session)} />
+-          </WidgetShell>
+-        );
+       case "overview":
+         return (
+           <WidgetShell
+@@ -124,12 +100,6 @@ function Dashboard({ session }: { session: RppgSession }) {
+             <HeartRateTrack session={session} method={method} onPick={moveWindow} />
+           </WidgetShell>
+         );
+-      case "methods":
+-        return (
+-          <WidgetShell title="Three ways to find the pulse" note="same face colour, three fixed recipes — no training">
+-            <MethodTable session={session} method={method} onPick={setMethod} />
+-          </WidgetShell>
+-        );
+       case "quality":
+         return (
+           <WidgetShell title="Signal quality" note="pulse power vs. the rest of the band">
+@@ -143,71 +113,12 @@ function Dashboard({ session }: { session: RppgSession }) {
+             </div>
+           </WidgetShell>
+         );
+-      case "hrv":
+-        return (
+-          <WidgetShell title="Variability" note="time between beats">
+-            <Facts
+-              rows={[
+-                [<Term key="rmssd" name="RMSSD" />, `${fmt(v.rmssd_ms, 0)} ms`],
+-                [<Term key="sdnn" name="SDNN" />, `${fmt(v.sdnn_ms, 0)} ms`],
+-                ["Left out", `${fmt(v.artifact_pct, 0)}% of beats`],
+-              ]}
+-            />
+-          </WidgetShell>
+-        );
+-      case "rgb":
+-        return (
+-          <WidgetShell title="Raw face colour" note="change from each channel’s average · the pulse is under 1%">
+-            <RgbTrace session={session} start={windowStart} />
+-          </WidgetShell>
+-        );
+-      case "channels":
+-        return (
+-          <WidgetShell
+-            title="Pulse per colour"
+-            note={session.colourWindowS ? `${session.colourWindowS[0]}–${session.colourWindowS[1]} s, steadiest stretch` : "pulsing share of each channel"}
+-          >
+-            <ChannelBars session={session} />
+-          </WidgetShell>
+-        );
+       case "beat":
+         return session.beatTemplate ? (
+           <WidgetShell title="Average pulse" note={`upstroke ${fmt((v.sut_s ?? NaN) * 1000, 0)} ms · cycle ${fmt(session.beatTemplate.cycleS, 2)} s`}>
+             <BeatTemplate session={session} />
+           </WidgetShell>
+         ) : null;
+-      case "spectrum":
+-        return session.spectrum ? (
+-          <WidgetShell title="Pulse spectrum" note={`peak ${fmt(v.hr_bpm, 1)} bpm${refHr !== undefined ? ` · oximeter ${fmt(refHr, 1)}` : ""}`}>
+-            <Spectrum session={session} refHr={refHr} />
+-          </WidgetShell>
+-        ) : null;
+-      case "withheld":
+-        return (
+-          <WidgetShell title="Shown only when calibrated" note="the pipeline refuses to guess">
+-            <Facts
+-              rows={[
+-                ["Blood pressure", "needs a cuff reading"],
+-                [<Term key="spo2" name="SpO₂">SpO₂ %</Term>, "needs an oximeter reading"],
+-                [<Term key="spo2r" name="SpO₂">SpO₂ ratio R</Term>, fmt(v.ratio_of_ratios, 2)],
+-              ]}
+-            />
+-          </WidgetShell>
+-        );
+-      case "facts":
+-        return (
+-          <WidgetShell title="Recording">
+-            <Facts
+-              rows={[
+-                ["Subject", session.subject.id],
+-                ["Length", `${fmt(session.durationS, 0)} s`],
+-                ["Camera", `${fmt(session.device.fps, 0)} fps`],
+-                ["Reference", session.reference ? "Fingertip oximeter" : "—"],
+-                ["Pipeline", "cvpr-lab · POS/CHROM"],
+-              ]}
+-            />
+-          </WidgetShell>
+-        );
+       default:
+         return null;
+     }
+@@ -533,165 +444,6 @@ function HeartRateTrack({ session, method, onPick }: { session: RppgSession; met
+   );
+ }
+ 
+-const METHOD_HOW: Record<RppgMethod, string> = {
+-  pos: "Projects colour onto a plane orthogonal to skin tone",
+-  chrom: "Two chrominance signals whose glare cancels",
+-  green: "Green channel alone — no glare removal",
+-};
+-
+-function MethodTable({ session, method, onPick }: { session: RppgSession; method: RppgMethod; onPick: (m: RppgMethod) => void }) {
+-  const hasRef = !!session.reference;
+-  const best = (Object.keys(session.scores) as RppgMethod[]).reduce((a, b) =>
+-    (session.scores[b].snrDb ?? -Infinity) > (session.scores[a].snrDb ?? -Infinity) ? b : a,
+-  );
+-  return (
+-    <div className="h-full overflow-auto" data-no-drag>
+-      <table className="w-full text-sm">
+-        <thead>
+-          <tr className="border-b border-border text-left text-xs text-muted-foreground">
+-            <th className="py-1.5 pr-3 font-medium">Method</th>
+-            <th className="py-1.5 pr-3 text-right font-medium">Heart rate</th>
+-            {hasRef && <th className="py-1.5 pr-3 text-right font-medium">Error vs. oximeter</th>}
+-            {hasRef && <th className="py-1.5 pr-3 text-right font-medium">Shape match</th>}
+-            <th className="py-1.5 text-right font-medium">Quality</th>
+-          </tr>
+-        </thead>
+-        <tbody>
+-          {(["pos", "chrom", "green"] as const).map((m) => {
+-            const s = session.scores[m];
+-            return (
+-              <tr
+-                key={m}
+-                className={`border-b border-border/60 last:border-0 ${m === method ? "bg-muted/60" : ""}`}
+-              >
+-                <td className="py-2 pr-3">
+-                  <button
+-                    type="button"
+-                    onClick={() => onPick(m)}
+-                    aria-pressed={m === method}
+-                    className="font-medium underline-offset-4 hover:underline"
+-                  >
+-                    {METHOD_LABEL[m]}
+-                  </button>
+-                  {m === best && <span className="ml-1.5 text-xs text-muted-foreground">· cleanest</span>}
+-                  <span className="block text-xs text-muted-foreground">{METHOD_HOW[m]}</span>
+-                </td>
+-                <td className="py-2 pr-3 text-right tabular-nums">{fmt(s.hrBpm, 1)} bpm</td>
+-                {hasRef && <td className="py-2 pr-3 text-right tabular-nums">±{fmt(s.maeBpm, 1)} bpm</td>}
+-                {hasRef && <td className="py-2 pr-3 text-right tabular-nums">{fmt(s.pearson, 2)}</td>}
+-                <td className="py-2 text-right tabular-nums">{fmt(s.snrDb, 1)} dB</td>
+-              </tr>
+-            );
+-          })}
+-        </tbody>
+-      </table>
+-      {hasRef && (
+-        <p className="mt-2 text-xs text-muted-foreground">
+-          Error = mean gap to the oximeter’s heart rate, window by window. Shape match = correlation with the oximeter
+-          waveform (1 = identical).
+-        </p>
+-      )}
+-    </div>
+-  );
+-}
+-
+-/** Each channel's percentage change from its own mean, so the three share an axis. */
+-function RgbTrace({ session, start }: { session: RppgSession; start: number }) {
+-  const [ref, size] = useSize<HTMLDivElement>();
+-  const [hover, setHover] = useState<{ t: number; at: { x: number; y: number } } | null>(null);
+-  const { fs } = session.rgb;
+-  const pct = useMemo(() => {
+-    const out: Record<string, number[]> = {};
+-    for (const c of CHANNELS) {
+-      const vals = session.rgb[c.key[0] as "r" | "g" | "b"];
+-      const m = vals.reduce((a, b) => a + b, 0) / vals.length;
+-      out[c.key] = vals.map((v) => ((v - m) / m) * 100);
+-    }
+-    return out;
+-  }, [session.rgb]);
+-  const { width } = size;
+-  const height = Math.max(80, size.height - 20);
+-  const margin = { top: 16, right: 8, bottom: 22, left: 40 };
+-  const x = linear([0, session.durationS], [margin.left, width - margin.right]);
+-  const sorted = Object.values(pct).flat().sort((a, b) => a - b);
+-  const q = (p: number) => sorted[Math.floor((sorted.length - 1) * p)];
+-  const y = linear(extent([q(0.005), q(0.995)], 0.15), [height - margin.bottom, margin.top]);
+-  const times = pct.red.map((_, i) => i / fs);
+-  const hi = hover ? Math.min(times.length - 1, Math.max(0, Math.round(hover.t * fs))) : null;
+-
+-  return (
+-    <div ref={ref} data-no-drag className="absolute inset-0 flex flex-col">
+-      <Legend items={CHANNELS.map((c) => ({ key: c.key, label: c.label, color: c.color }))} />
+-      <div className="relative">
+-        <ChartFrame
+-          width={width}
+-          height={height}
+-          margin={margin}
+-          x={x}
+-          y={y}
+-          xTicks={niceTicks(0, session.durationS, 6)}
+-          yTicks={niceTicks(y.domain[0], y.domain[1], 3)}
+-          xFormat={(v) => `${v}s`}
+-          yFormat={(v) => `${v.toFixed(1)}`}
+-          yLabel="%"
+-          bands={session.phases.map((p, i) => ({ from: p.startS, to: p.endS, label: p.name, shaded: i % 2 === 1 }))}
+-          ariaLabel="Red, green and blue face colour over the recording, as percentage change"
+-          onHover={(v, px) => setHover(v === null || !px ? null : { t: v, at: px })}
+-          clip
+-        >
+-          <rect
+-            x={x(start)}
+-            y={y.range[1]}
+-            width={x(start + WINDOW_S) - x(start)}
+-            height={y.range[0] - y.range[1]}
+-            fill="var(--series-1)"
+-            fillOpacity={0.07}
+-          />
+-          {CHANNELS.map((c) => (
+-            <path key={c.key} d={linePath(times, pct[c.key], x, y)} fill="none" stroke={c.color} strokeWidth={1} strokeOpacity={0.85} />
+-          ))}
+-          {hover && <line x1={x(hover.t)} x2={x(hover.t)} y1={y.range[1]} y2={y.range[0]} stroke="var(--viz-muted)" strokeWidth={1} />}
+-        </ChartFrame>
+-        <Tooltip at={hover?.at ?? null} containerWidth={width}>
+-          {hi !== null && (
+-            <>
+-              <p className="mb-0.5 font-medium tabular-nums">{times[hi].toFixed(1)} s</p>
+-              {CHANNELS.map((c) => (
+-                <p key={c.key} className="flex justify-between gap-4 tabular-nums">
+-                  <span className="text-muted-foreground">{c.label}</span>
+-                  {pct[c.key][hi] >= 0 ? "+" : ""}
+-                  {pct[c.key][hi].toFixed(2)}%
+-                </p>
+-              ))}
+-            </>
+-          )}
+-        </Tooltip>
+-      </div>
+-    </div>
+-  );
+-}
+-
+-function ChannelBars({ session }: { session: RppgSession }) {
+-  const vals = CHANNELS.map((c) => ({ ...c, pct: session.channels[c.key]?.ac_dc_pct }));
+-  const max = Math.max(...vals.map((v) => v.pct ?? 0), 1e-6);
+-  return (
+-    <div className="flex h-full flex-col justify-end gap-2.5">
+-      {vals.map((v) => (
+-        <div key={v.key} className="flex items-center gap-2 text-sm">
+-          <span className="w-11 text-muted-foreground">{v.label}</span>
+-          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
+-            <div className="h-full rounded-full" style={{ width: `${((v.pct ?? 0) / max) * 100}%`, background: v.color }} />
+-          </div>
+-          <span className="w-14 text-right tabular-nums">{fmt(v.pct, 2)}%</span>
+-        </div>
+-      ))}
+-      <p className="text-xs text-muted-foreground">
+-        Blood absorbs green most, so green should pulse hardest. Perfusion {fmt(session.vitals.perfusion_index_pct, 2)}%.
+-      </p>
+-    </div>
+-  );
+-}
+-
+ function BeatTemplate({ session }: { session: RppgSession }) {
+   const [ref, size] = useSize<HTMLDivElement>();
+   const tpl = session.beatTemplate!;
+@@ -723,46 +475,6 @@ function BeatTemplate({ session }: { session: RppgSession }) {
+   );
+ }
+ 
+-function Spectrum({ session, refHr }: { session: RppgSession; refHr?: number }) {
+-  const [ref, size] = useSize<HTMLDivElement>();
+-  const spec = session.spectrum!;
+-  const { width, height } = size;
+-  const margin = { top: 16, right: 8, bottom: 22, left: 36 };
+-  const x = linear([spec.bpm[0], spec.bpm[spec.bpm.length - 1]], [margin.left, width - margin.right]);
+-  const y = linear([0, 1.1], [height - margin.bottom, margin.top]);
+-  const area = `${linePath(spec.bpm, spec.power, x, y)}L${x(spec.bpm[spec.bpm.length - 1])},${y(0)}L${x(spec.bpm[0])},${y(0)}Z`;
+-  const peak = session.vitals.hr_bpm;
+-  return (
+-    <div ref={ref} className="absolute inset-0">
+-      <ChartFrame
+-        width={width}
+-        height={height}
+-        margin={margin}
+-        x={x}
+-        y={y}
+-        xTicks={[60, 90, 120, 150, 180].filter((v) => v <= spec.bpm[spec.bpm.length - 1])}
+-        yTicks={[0, 0.5, 1]}
+-        xFormat={(v) => `${v}`}
+-        yFormat={(v) => v.toFixed(1)}
+-        xLabel="bpm"
+-        ariaLabel="Power spectrum of the pulse waveform across the heart-rate band"
+-      >
+-        <path d={area} fill="var(--series-1)" opacity={0.18} />
+-        <path d={linePath(spec.bpm, spec.power, x, y)} fill="none" stroke="var(--series-1)" strokeWidth={2} />
+-        {refHr !== undefined && (
+-          <g>
+-            <line x1={x(refHr)} x2={x(refHr)} y1={y.range[1]} y2={y.range[0]} stroke="var(--viz-text-2)" strokeWidth={1.2} strokeDasharray="4 3" />
+-            <text x={x(refHr) + 4} y={margin.top - 3} fontSize={12} fill="var(--viz-text-2)">
+-              oximeter
+-            </text>
+-          </g>
+-        )}
+-        {peak !== undefined && <circle cx={x(peak)} cy={y(1)} r={4} fill="var(--series-1)" stroke="var(--card)" strokeWidth={2} />}
+-      </ChartFrame>
+-    </div>
+-  );
+-}
+-
+ function mean(vals: (number | null)[]) {
+   const ok = vals.filter((v): v is number => v !== null && Number.isFinite(v));
+   return ok.length ? ok.reduce((a, b) => a + b, 0) / ok.length : undefined;
+@@ -776,11 +488,3 @@ function labelOf(snr?: number): { status: QualityStatus; word: string } {
+   if (snr >= 1) return { status: "critical", word: "Weak" };
+   return { status: "critical", word: "Not a pulse" };
+ }
+-
+-function cueNote(session: RppgSession) {
+-  const names = { riav: "beat height", rsa: "heart-rate swing", riiv: "baseline drift" } as const;
+-  const agreeing = (Object.keys(names) as (keyof typeof names)[])
+-    .filter((k) => session.respiration[k] && session.vitals.rr_brpm !== undefined && Math.abs(session.respiration[k]!.brpm - session.vitals.rr_brpm!) <= 2.5)
+-    .map((k) => names[k]);
+-  return agreeing.length ? `agreed by ${agreeing.join(" + ")}` : "single cue";
+-}
+diff --git a/website/src/lib/explanations.ts b/website/src/lib/explanations.ts
+index 5c1417a..1a0911a 100644
+--- a/website/src/lib/explanations.ts
++++ b/website/src/lib/explanations.ts
+@@ -67,18 +67,10 @@ export const CAPTIONS: Record<ModalityKey, Record<string, string>> = {
+   rppg: {
+     pulse: "Top: the face’s average green colour, barely changing. Bottom: the pulse extracted from it, with the fingertip sensor dashed.",
+     "hr-now": "Heart rate measured by the camera alone, with the fingertip sensor’s value for comparison.",
+-    breathing: "Breaths per minute, read from small rhythmic changes in the pulse signal.",
+     overview: "The whole recording at a glance. The strip shows how trustworthy each 5-second stretch is.",
+-    hr: "The camera’s heart rate (solid) against the fingertip sensor (dashed), updated every second.",
+-    methods: "Three standard recipes for turning face colour into a pulse, scored against the fingertip sensor.",
++    hr: "The camera’s heart rate (solid) against the fingertip sensor (dashed). Close lines mean an accurate signal.",
+     quality: "How strongly the pulse stands out from noise. Below the floor, the page shows nothing rather than a guess.",
+-    hrv: "How much the time between beats varies, after unreliable beats are left out.",
+-    rgb: "The raw face colour in red, green and blue. The pulse is a tiny ripple; head movement causes the big swings.",
+-    channels: "How strongly each colour pulses. Blood absorbs green light most, so green should be strongest.",
+-    beat: "All pulses averaged into one shape, rising quickly and falling slowly.",
+-    spectrum: "Which beat speeds are present in the signal. The tallest peak is the heart rate.",
+-    withheld: "Measures a camera cannot give reliably without first checking against a real device.",
+-    facts: "The camera, the length of the recording and the reference used.",
++    beat: "All pulses averaged into one shape. A clean signal gives a smooth curve that rises quickly and falls slowly.",
+   },
+ };
+ 

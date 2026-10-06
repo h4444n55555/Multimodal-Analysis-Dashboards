@@ -1,0 +1,19 @@
+{
+  "modality": "rppg",
+  "source": {
+    "kind": "synthetic",
+    "note": "Synthetic trace with a known pulse. Pulse and vitals from cvpr-lab (POS/CHROM/green + vitals.py)."
+  },
+  "sessions": [
+    {
+      "id": "S01",
+      "subject": {
+        "id": "Synthetic",
+        "ageBand": "—",
+        "sex": "—"
+      },
+      "label": "Still → head motion → still",
+      "durationS": 75.0
+    }
+  ]
+}

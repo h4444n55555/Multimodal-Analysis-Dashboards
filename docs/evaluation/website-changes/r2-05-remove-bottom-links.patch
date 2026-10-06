@@ -1,0 +1,69 @@
+diff --git a/website/src/components/modality/ecg-explorer.tsx b/website/src/components/modality/ecg-explorer.tsx
+index 348efe8..902d355 100644
+--- a/website/src/components/modality/ecg-explorer.tsx
++++ b/website/src/components/modality/ecg-explorer.tsx
+@@ -1,7 +1,6 @@
+ "use client";
+ 
+ import { cloneElement, isValidElement, useMemo, useState, type ReactElement } from "react";
+-import Link from "next/link";
+ import { useAsset } from "@/lib/use-json";
+ import { dataUrl, type DataIndex, type EcgSession, type QualityStatus } from "@/lib/sample-data";
+ import { ChartFrame, Tooltip, linePath, linear, niceTicks, extent, useSize } from "@/components/viz/chart";
+@@ -128,10 +127,6 @@ function Dashboard({ session }: { session: EcgSession }) {
+       </div>
+ 
+       <RequestAccess />
+-
+-      <Link href="/thermal" className="self-start text-sm font-medium underline-offset-4 hover:underline">
+-        See the thermal data →
+-      </Link>
+     </div>
+   );
+ }
+diff --git a/website/src/components/modality/rppg-explorer.tsx b/website/src/components/modality/rppg-explorer.tsx
+index 9cea86e..5ad8a8d 100644
+--- a/website/src/components/modality/rppg-explorer.tsx
++++ b/website/src/components/modality/rppg-explorer.tsx
+@@ -1,7 +1,6 @@
+ "use client";
+ 
+ import { cloneElement, isValidElement, useMemo, useState, type ReactElement } from "react";
+-import Link from "next/link";
+ import { useAsset } from "@/lib/use-json";
+ import { dataUrl, type DataIndex, type QualityStatus, type RppgMethod, type RppgSession } from "@/lib/sample-data";
+ import { ChartFrame, Legend, Tooltip, linePath, linear, niceTicks, extent, useSize } from "@/components/viz/chart";
+@@ -139,10 +138,6 @@ function Dashboard({ session }: { session: RppgSession }) {
+       </div>
+ 
+       <RequestAccess />
+-
+-      <Link href="/ecg" className="self-start text-sm font-medium underline-offset-4 hover:underline">
+-        See the ECG data →
+-      </Link>
+     </div>
+   );
+ }
+diff --git a/website/src/components/modality/thermal-explorer.tsx b/website/src/components/modality/thermal-explorer.tsx
+index e6fd472..15ac739 100644
+--- a/website/src/components/modality/thermal-explorer.tsx
++++ b/website/src/components/modality/thermal-explorer.tsx
+@@ -1,7 +1,6 @@
+ "use client";
+ 
+ import { cloneElement, isValidElement, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+-import Link from "next/link";
+ import { Pause, Play } from "lucide-react";
+ import { useAsset } from "@/lib/use-json";
+ import { dataUrl, type DataIndex, type ThermalSession } from "@/lib/sample-data";
+@@ -290,10 +289,6 @@ function Dashboard({ session, frames }: { session: ThermalSession; frames: Uint8
+       </div>
+ 
+       <RequestAccess />
+-
+-      <Link href="/ecg" className="self-start text-sm font-medium underline-offset-4 hover:underline">
+-        See the ECG data →
+-      </Link>
+     </div>
+   );
+ }

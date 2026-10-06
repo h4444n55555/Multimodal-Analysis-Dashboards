@@ -7,15 +7,16 @@ import { ArrowLeft, ArrowRight, Lock, MailCheck, X } from "lucide-react";
 import { MODALITIES } from "@/lib/modalities";
 import { DATA_REQUEST_EMAIL } from "@/lib/links";
 import {
+  ACCESS_PERIOD,
   AGREEMENT_TITLE,
   AGREEMENT_VERSION,
   CLAUSES,
-  DURATIONS,
   ETHICS_OPTIONS,
   MODALITY_CONTENTS,
   PERSONAL_EMAIL,
   POSITIONS,
   STUDENT_POSITIONS,
+  SUMMARY,
 } from "@/lib/data-agreement";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,9 @@ const control =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-foreground/50 focus-visible:ring-2 focus-visible:ring-ring/40";
 
 const STEPS = ["You", "Project", "Agreement"] as const;
+
+/** Today in the applicant's own time zone (toISOString would give the UTC date). */
+const localDate = () => new Date().toLocaleDateString("en-CA");
 
 /**
  * "Request access" call-to-action and its pop-up form — the same on every
@@ -130,7 +134,7 @@ function RequestForm() {
     }
 
     const titles = MODALITIES.filter((m) => modalities.includes(m.key)).map((m) => m.title);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDate();
     const lines = [
       `DATA ACCESS REQUEST — ${titles.join(", ")}`,
       "",
@@ -138,20 +142,15 @@ function RequestForm() {
       `Name: ${get("name")}`,
       `Position: ${get("position")}`,
       `Institutional email: ${get("email")}`,
-      `Institution / department: ${get("institution")} — ${get("department")}`,
-      `Country: ${get("country")}`,
-      get("homepage") ? `Profile page: ${get("homepage")}` : null,
-      ...(isStudent
-        ? ["", "SUPERVISOR", `Name: ${get("supName")}`, `Position: ${get("supTitle")}`, `Email: ${get("supEmail")}`]
-        : []),
+      `Institution: ${get("institution")}`,
+      ...(isStudent ? ["", "SUPERVISOR", `Name: ${get("supName")}`, `Email: ${get("supEmail")}`] : []),
       "",
       "PROJECT",
       `Title: ${get("project")}`,
       `Modalities: ${titles.join(", ")}`,
       `Intended use: ${get("purpose")}`,
       `Ethics approval: ${get("ethics")}${get("ethicsRef") ? ` (ref. ${get("ethicsRef")})` : ""}`,
-      `Access period: ${get("duration")}`,
-      `People who will access the data: ${get("team")}`,
+      `Access period: ${ACCESS_PERIOD}`,
       "",
       "AGREEMENT",
       `I agree to the ${AGREEMENT_TITLE}, version ${AGREEMENT_VERSION} (clauses 1–${CLAUSES.length}).`,
@@ -194,7 +193,7 @@ function RequestForm() {
       <div className="border-b border-border px-6 pb-4 pt-6 pr-12">
         <Dialog.Title className="text-xl font-semibold">Request access</Dialog.Title>
         <Dialog.Description className="mt-0.5 text-sm text-muted-foreground">
-          For non-commercial academic research. Every request is reviewed by the study team.
+          For non-commercial academic research. Takes about 3 minutes; every request is reviewed by the study team.
         </Dialog.Description>
         <ol className="mt-4 grid grid-cols-3 gap-2" aria-label="Steps">
           {STEPS.map((s, i) => (
@@ -245,17 +244,8 @@ function RequestForm() {
               className={control}
             />
           </Field>
-          <Field label="Institution">
+          <Field label="Institution" className="sm:col-span-2">
             <input name="institution" required autoComplete="organization" className={control} />
-          </Field>
-          <Field label="Department">
-            <input name="department" required className={control} />
-          </Field>
-          <Field label="Country">
-            <input name="country" required autoComplete="country-name" className={control} />
-          </Field>
-          <Field label="Profile page (optional)">
-            <input name="homepage" type="url" placeholder="https://" className={control} />
           </Field>
 
           {isStudent && (
@@ -269,10 +259,7 @@ function RequestForm() {
               <Field label="Supervisor’s name">
                 <input name="supName" required className={control} />
               </Field>
-              <Field label="Supervisor’s position">
-                <input name="supTitle" required placeholder="e.g. Assistant Professor" className={control} />
-              </Field>
-              <Field label="Supervisor’s institutional email" className="sm:col-span-2">
+              <Field label="Supervisor’s institutional email">
                 <input name="supEmail" type="email" required className={control} />
               </Field>
             </div>
@@ -335,48 +322,52 @@ function RequestForm() {
                 ))}
               </select>
             </Field>
-            <Field label={ethics === ETHICS_OPTIONS[0] ? "Approval reference" : "Approval reference (if any)"}>
+            <Field label={ethics === ETHICS_OPTIONS[0] ? "Approval reference" : "Approval reference (optional)"}>
               <input name="ethicsRef" required={ethics === ETHICS_OPTIONS[0]} className={control} />
             </Field>
-            <Field label="Access needed for">
-              <select name="duration" required defaultValue="" className={control}>
-                <option value="" disabled>
-                  Choose…
-                </option>
-                {DURATIONS.map((d) => (
-                  <option key={d}>{d}</option>
-                ))}
-              </select>
-            </Field>
           </div>
-
-          <Field label="Everyone who will handle the data (names and roles)">
-            <textarea name="team" required rows={2} placeholder="e.g. Jane Doe (PI), John Roe (PhD student)" className={cn(control, "resize-y")} />
-          </Field>
         </fieldset>
 
         {/* 3 · agreement */}
         <fieldset ref={(el) => void (stepRefs.current[2] = el)} hidden={step !== 2} className="flex flex-col gap-4">
-          <div>
-            <p className="text-sm font-medium">
-              {AGREEMENT_TITLE} <span className="font-normal text-muted-foreground">· v{AGREEMENT_VERSION}</span>
-            </p>
-            <Link href="/data-agreement" target="_blank" className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground">
-              Open the full agreement in a new tab
-            </Link>
+          <p className="text-sm font-medium">
+            {AGREEMENT_TITLE} <span className="font-normal text-muted-foreground">· v{AGREEMENT_VERSION}</span>
+          </p>
+
+          {/* the gist first; the full terms are one click away and still govern */}
+          <div className="rounded-xl border border-border bg-muted/40 p-4">
+            <p className="text-sm font-semibold">In short</p>
+            <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm leading-snug">
+              {SUMMARY.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
           </div>
-          <ol className="max-h-64 list-decimal space-y-2 overflow-y-auto rounded-xl border border-border bg-muted/40 py-3 pl-9 pr-4 text-xs leading-relaxed">
-            {CLAUSES.map((c) => (
-              <li key={c.title}>
-                <span className="font-medium text-foreground">{c.title}.</span>{" "}
-                <span className="text-muted-foreground">{c.text}</span>
-              </li>
-            ))}
-          </ol>
+
+          <details className="group rounded-xl border border-border">
+            <summary className="cursor-pointer select-none px-4 py-2.5 text-sm font-medium">
+              Read the full agreement ({CLAUSES.length} terms)
+            </summary>
+            <ol className="max-h-64 list-decimal space-y-2 overflow-y-auto border-t border-border py-3 pl-9 pr-4 text-xs leading-relaxed">
+              {CLAUSES.map((c) => (
+                <li key={c.title}>
+                  <span className="font-medium text-foreground">{c.title}.</span>{" "}
+                  <span className="text-muted-foreground">{c.text}</span>
+                </li>
+              ))}
+            </ol>
+            <Link
+              href="/data-agreement"
+              target="_blank"
+              className="block border-t border-border px-4 py-2 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            >
+              Open it in a new tab to print or save
+            </Link>
+          </details>
 
           <label className="flex items-start gap-2 text-sm">
             <input type="checkbox" name="agree" required className="mt-1" />
-            I have read the agreement and accept all {CLAUSES.length} terms on behalf of everyone listed in my request.
+            I have read the full agreement and accept all {CLAUSES.length} terms.
           </label>
           {isStudent && (
             <label className="flex items-start gap-2 text-sm">
@@ -385,9 +376,9 @@ function RequestForm() {
             </label>
           )}
 
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+          <div className="grid gap-3">
             <Field
-              label="Signature — type your full name"
+              label={`Signature — type your full name (dated ${localDate()})`}
               hint={
                 signError && (
                   <span role="alert" style={{ color: "var(--status-critical)" }}>
@@ -402,9 +393,6 @@ function RequestForm() {
                 onChange={() => setSignError(false)}
                 className={cn(control, "font-serif italic")}
               />
-            </Field>
-            <Field label="Date">
-              <input readOnly tabIndex={-1} value={new Date().toISOString().slice(0, 10)} className={cn(control, "tabular-nums text-muted-foreground")} />
             </Field>
           </div>
         </fieldset>

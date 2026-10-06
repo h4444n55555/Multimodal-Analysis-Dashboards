@@ -1,0 +1,402 @@
+diff --git a/website/src/components/modality/details.tsx b/website/src/components/modality/details.tsx
+new file mode 100644
+index 0000000..4fae6d9
+--- /dev/null
++++ b/website/src/components/modality/details.tsx
+@@ -0,0 +1,132 @@
++"use client";
++
++import type { ReactNode } from "react";
++import { Dialog } from "radix-ui";
++import { ArrowUpRight, BookOpen, X } from "lucide-react";
++import { DETAILS, type ModalityKey } from "@/lib/explanations";
++import type { DataSource } from "@/lib/sample-data";
++
++/**
++ * "Read the full details" text link and the large reading card it opens.
++ * The dashboard stays short; everything specific to the sample recording
++ * (what happens in it, where it comes from, how it is processed) lives here.
++ */
++export function ModalityDetails({
++  modality,
++  title,
++  highlight,
++  source,
++  facts,
++}: {
++  modality: ModalityKey;
++  /** e.g. "ECG" */
++  title: string;
++  /** one computed sentence about this recording */
++  highlight?: ReactNode;
++  source?: DataSource;
++  /** recording facts as label/value rows */
++  facts: [string, ReactNode][];
++}) {
++  const copy = DETAILS[modality];
++  return (
++    <Dialog.Root>
++      <Dialog.Trigger
++        data-details-link
++        className="group inline-flex items-center gap-2 self-start text-base font-medium text-foreground underline decoration-muted-foreground/60 underline-offset-[6px] transition-colors hover:decoration-foreground"
++      >
++        <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
++        Read the full details about this {title} data
++        <span aria-hidden="true" className="inline-block transition-transform group-hover:translate-x-0.5">
++          →
++        </span>
++      </Dialog.Trigger>
++
++      <Dialog.Portal>
++        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
++        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl border border-border bg-background shadow-2xl data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
++          <div className="border-b border-border px-8 pb-5 pt-7 pr-14">
++            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Full details</p>
++            <Dialog.Title className="mt-1 text-2xl font-semibold tracking-tight">{title}: the sample recording</Dialog.Title>
++            <Dialog.Description className="mt-1 text-muted-foreground">
++              What this recording is, where it comes from, and how the page processes it.
++            </Dialog.Description>
++          </div>
++
++          <div className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
++            <div className="flex max-w-[68ch] flex-col gap-8 text-base leading-7">
++              <Section heading="This recording">
++                <p>{copy.recording}</p>
++                {highlight && (
++                  <p className="mt-3 rounded-xl border border-border bg-muted/50 px-4 py-3">{highlight}</p>
++                )}
++              </Section>
++
++              {source && (
++                <Section heading="Where it comes from">
++                  <p>
++                    <a
++                      href={source.url}
++                      target="_blank"
++                      rel="noopener noreferrer"
++                      className="inline-flex items-center gap-1 font-medium underline underline-offset-4"
++                    >
++                      {source.title}
++                      <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
++                    </a>
++                  </p>
++                  <p className="text-muted-foreground">
++                    {source.author} · {source.license}
++                  </p>
++                  {source.note && <p className="mt-2 text-muted-foreground">{source.note}</p>}
++                </Section>
++              )}
++
++              <Section heading="Recording details">
++                <dl className="grid gap-x-8 gap-y-2 sm:grid-cols-[auto_1fr]">
++                  {facts.map(([k, v]) => (
++                    <div key={k} className="contents">
++                      <dt className="text-muted-foreground">{k}</dt>
++                      <dd className="font-medium tabular-nums">{v}</dd>
++                    </div>
++                  ))}
++                </dl>
++              </Section>
++
++              <Section heading="How the page processes it">
++                <ul className="flex list-disc flex-col gap-2 pl-5">
++                  {copy.processing.map((line) => (
++                    <li key={line}>{line}</li>
++                  ))}
++                </ul>
++              </Section>
++
++              <Section heading="Keep in mind">
++                <ul className="flex list-disc flex-col gap-2 pl-5">
++                  {copy.limits.map((line) => (
++                    <li key={line}>{line}</li>
++                  ))}
++                </ul>
++              </Section>
++            </div>
++          </div>
++
++          <Dialog.Close
++            className="absolute right-5 top-5 rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
++            aria-label="Close"
++          >
++            <X className="h-5 w-5" />
++          </Dialog.Close>
++        </Dialog.Content>
++      </Dialog.Portal>
++    </Dialog.Root>
++  );
++}
++
++function Section({ heading, children }: { heading: string; children: ReactNode }) {
++  return (
++    <section>
++      <h3 className="mb-2 text-lg font-semibold tracking-tight">{heading}</h3>
++      {children}
++    </section>
++  );
++}
+diff --git a/website/src/components/modality/ecg-explorer.tsx b/website/src/components/modality/ecg-explorer.tsx
+index 902d355..ef9cbb0 100644
+--- a/website/src/components/modality/ecg-explorer.tsx
++++ b/website/src/components/modality/ecg-explorer.tsx
+@@ -9,6 +9,7 @@ import { BigNumber, WidgetShell } from "@/components/modality/widget";
+ import { RequestAccess } from "@/components/modality/request-access";
+ import { DraggableWidgetGrid, type WidgetItem } from "@/components/ui/draggable-widget-grid";
+ import { AboutData } from "@/components/modality/explain";
++import { ModalityDetails } from "@/components/modality/details";
+ import { CAPTIONS } from "@/lib/explanations";
+ 
+ const WINDOW_S = 10;
+@@ -126,11 +127,56 @@ function Dashboard({ session }: { session: EcgSession }) {
+         <DraggableWidgetGrid items={WIDGETS} renderItem={withCaption} maxColumns={4} cellSize={280} gap={14} />
+       </div>
+ 
+-      <RequestAccess />
++      <div className="flex flex-col gap-5">
++        <ModalityDetails
++          modality="ecg"
++          title="ECG"
++          highlight={ecgHighlight(session)}
++          source={session.source}
++          facts={[
++            ["Record", session.subject.id],
++            [
++              "Excerpt",
++              `${fmtClock(session.source?.windowStartS ?? 0)}–${fmtClock((session.source?.windowStartS ?? 0) + session.durationS)}` +
++                (session.drive ? ` of the full ${Math.round(session.drive.durationS / 60)}-minute drive` : ""),
++            ],
++            ["Lead", session.device.lead],
++            ["Sampling", `${session.device.fs} Hz · ${session.device.units}`],
++            ["Beats found", `${h.beats ?? "—"} (${fmt(h.artifact_pct, 1)}% left out)`],
++            ["Also recorded", "Breathing · skin conductance · shoulder EMG"],
++            ["Licence", session.source?.license ?? "—"],
++          ]}
++        />
++        <RequestAccess />
++      </div>
+     </div>
+   );
+ }
+ 
++/** "Heart rate went from 66 bpm at rest to 90 bpm in the city…" — from the phase metrics. */
++function ecgHighlight(session: EcgSession) {
++  const [first, second] = session.phases;
++  const a = first && session.hrv.phases[first.name];
++  const b = second && session.hrv.phases[second.name];
++  if (a?.mean_hr_bpm === undefined || b?.mean_hr_bpm === undefined) return undefined;
++  const label = (n: string) => (n.toLowerCase() === "rest" ? "at rest" : `during ${n.toLowerCase()} driving`);
++  return (
++    <>
++      Heart rate went from <strong>{Math.round(a.mean_hr_bpm)} bpm</strong> {label(first.name)} to{" "}
++      <strong>{Math.round(b.mean_hr_bpm)} bpm</strong> {label(second.name)}
++      {a.rmssd_ms !== undefined && b.rmssd_ms !== undefined && (
++        <>
++          , and beat-to-beat variation fell from <strong>{Math.round(a.rmssd_ms)}</strong> to{" "}
++          <strong>{Math.round(b.rmssd_ms)} ms</strong>
++        </>
++      )}
++      .
++    </>
++  );
++}
++
++const fmtClock = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
++
+ /** Raw on top, cleaned with beats below — the same window, stacked. */
+ function TracePair({ session, start }: { session: EcgSession; start: number }) {
+   const [ref, size] = useSize<HTMLDivElement>();
+diff --git a/website/src/components/modality/rppg-explorer.tsx b/website/src/components/modality/rppg-explorer.tsx
+index 5ad8a8d..9f1d9bd 100644
+--- a/website/src/components/modality/rppg-explorer.tsx
++++ b/website/src/components/modality/rppg-explorer.tsx
+@@ -9,6 +9,7 @@ import { BigNumber, WidgetShell } from "@/components/modality/widget";
+ import { RequestAccess } from "@/components/modality/request-access";
+ import { DraggableWidgetGrid, type WidgetItem } from "@/components/ui/draggable-widget-grid";
+ import { AboutData, Term } from "@/components/modality/explain";
++import { ModalityDetails } from "@/components/modality/details";
+ import { CAPTIONS } from "@/lib/explanations";
+ 
+ const WINDOW_S = 10;
+@@ -137,11 +138,41 @@ function Dashboard({ session }: { session: RppgSession }) {
+         <DraggableWidgetGrid items={WIDGETS} renderItem={withCaption} maxColumns={4} cellSize={280} gap={14} />
+       </div>
+ 
+-      <RequestAccess />
++      <div className="flex flex-col gap-5">
++        <ModalityDetails
++          modality="rppg"
++          title="rPPG"
++          highlight={rppgHighlight(session, refHr)}
++          source={session.source}
++          facts={[
++            ["Length", `${fmt(session.durationS, 0)} s`],
++            ["Camera", session.device.camera],
++            ["Measured from", session.device.roi],
++            ["Method", "POS (plane orthogonal to skin)"],
++            ["Beats found", `${session.beats.length} (${fmt(v.artifact_pct, 0)}% left out of variability)`],
++            ["Reference", session.reference ? "Fingertip pulse sensor" : "—"],
++            ["Pipeline", "cvpr-lab (classical extractors + vitals)"],
++          ]}
++        />
++        <RequestAccess />
++      </div>
+     </div>
+   );
+ }
+ 
++/** "…stayed within 0.2 bpm of a fingertip sensor (71.8 vs 71.8 bpm)" — like-for-like averages. */
++function rppgHighlight(session: RppgSession, refHr?: number) {
++  const mae = session.scores.pos.maeBpm;
++  const camHr = mean(session.track.pos);
++  if (refHr === undefined || mae === undefined || camHr === undefined) return undefined;
++  return (
++    <>
++      Without touching the skin, the camera’s heart rate stayed within <strong>{mae.toFixed(1)} bpm</strong> of a
++      fingertip sensor on average ({camHr.toFixed(1)} vs {refHr.toFixed(1)} bpm).
++    </>
++  );
++}
++
+ /** Green channel on top (what the camera saw), extracted pulse below. */
+ function PulsePair({ session, start, method }: { session: RppgSession; start: number; method: RppgMethod }) {
+   const [ref, size] = useSize<HTMLDivElement>();
+diff --git a/website/src/components/modality/thermal-explorer.tsx b/website/src/components/modality/thermal-explorer.tsx
+index 15ac739..873f57a 100644
+--- a/website/src/components/modality/thermal-explorer.tsx
++++ b/website/src/components/modality/thermal-explorer.tsx
+@@ -11,6 +11,7 @@ import { Facts, WidgetShell } from "@/components/modality/widget";
+ import { RequestAccess } from "@/components/modality/request-access";
+ import { DraggableWidgetGrid, type WidgetItem } from "@/components/ui/draggable-widget-grid";
+ import { AboutData } from "@/components/modality/explain";
++import { ModalityDetails } from "@/components/modality/details";
+ import { CAPTIONS } from "@/lib/explanations";
+ 
+ // Region identity follows the fixed categorical order (validated slots 1-4)
+@@ -288,11 +289,55 @@ function Dashboard({ session, frames }: { session: ThermalSession; frames: Uint8
+         <DraggableWidgetGrid items={WIDGETS} renderItem={withCaption} maxColumns={4} cellSize={280} gap={14} />
+       </div>
+ 
+-      <RequestAccess />
++      <div className="flex flex-col gap-5">
++        <ModalityDetails
++          modality="thermal"
++          title="Thermal"
++          highlight={thermalHighlight(session)}
++          source={session.source}
++          facts={[
++            ["Camera", session.device.model],
++            ["Shown at", `${W} × ${H} pixels`],
++            ["Frames", `${meta.count} at ${meta.fps} per second`],
++            ["Length", `${session.durationS} s`],
++            ["Regions tracked", session.rois.map((r) => r.label).join(", ")],
++            ...(session.context ? [["Room temperature", `${session.context.ambientC} °C`] as [string, string]] : []),
++            ["Licence", session.source?.license ?? "—"],
++          ]}
++        />
++        <RequestAccess />
++      </div>
+     </div>
+   );
+ }
+ 
++/** "The mouth cooled by 1.3 °C while drinking…" — the region that changed most. */
++function thermalHighlight(session: ThermalSession) {
++  const { rateHz, roiMeanC } = session.series;
++  const [before, during, after] = ["Before", "Drinking", "After"].map((n) => session.phases.find((p) => p.name === n));
++  if (!before || !during) return undefined;
++  const mean = (v: number[], p: { startS: number; endS: number }) => {
++    const seg = v.slice(Math.floor(p.startS * rateHz), Math.ceil(p.endS * rateHz));
++    return seg.reduce((a, x) => a + x, 0) / Math.max(1, seg.length);
++  };
++  const drops = session.rois
++    .filter((r) => r.valid)
++    .map((r) => {
++      const v = roiMeanC[r.key];
++      const b = mean(v, before);
++      return { label: r.label, drop: b - mean(v, during), recovered: after ? b - mean(v, after) < 0.3 : false };
++    })
++    .sort((a, b) => b.drop - a.drop);
++  const top = drops[0];
++  if (!top || top.drop < 0.2) return undefined;
++  return (
++    <>
++      In this clip, the <strong>{top.label.toLowerCase()}</strong> cooled by <strong>{top.drop.toFixed(1)} °C</strong>{" "}
++      while drinking{top.recovered ? ", then warmed back up." : "."}
++    </>
++  );
++}
++
+ /** Fits the 4:3 thermogram inside whatever space the widget leaves. */
+ function ThermalCanvas({
+   session,
+diff --git a/website/src/lib/explanations.ts b/website/src/lib/explanations.ts
+index 1a0911a..93eb23e 100644
+--- a/website/src/lib/explanations.ts
++++ b/website/src/lib/explanations.ts
+@@ -45,6 +45,65 @@ export const ABOUT: Record<ModalityKey, About> = {
+   },
+ };
+ 
++/** Fixed copy for each page's "full details" card. Recording-specific numbers
++ *  are computed from the data in each explorer and added alongside. */
++export type DetailsCopy = {
++  /** what happens in the sample recording */
++  recording: string;
++  /** how the page turns the raw recording into what is shown */
++  processing: string[];
++  /** what to keep in mind when reading this sample */
++  limits: string[];
++};
++
++export const DETAILS: Record<ModalityKey, DetailsCopy> = {
++  thermal: {
++    recording:
++      "A short thermal video of a person drinking a cold glass of juice. The cold drink cools the lips and mouth, which makes it a clear, easy-to-see example of a local temperature change on the face.",
++    processing: [
++      "Each frame is a grid of temperatures, one per pixel, shown with a colour scale from 22 to 36 °C.",
++      "Four face regions (forehead, eyes, nose and mouth) are marked as boxes, and the average temperature inside each box is tracked over time.",
++      "Pixels warmer than 30 °C are counted as face, the rest as room, for the per-frame figures.",
++    ],
++    limits: [
++      "The clip is a public stand-in until the study’s own thermal recordings are released.",
++      "The original video stores colours, not temperatures. Temperatures here are rebuilt from the colour palette, so treat exact degrees as approximate; the changes over time are what matter.",
++      "The region boxes stay in fixed positions rather than following facial landmarks, so any head movement shifts what each box covers.",
++    ],
++  },
++  ecg: {
++    recording:
++      "Five minutes of a driver’s chest ECG from the MIT driver-stress study: the first part parked at rest, the rest driving through a city. Breathing, skin conductance and shoulder muscle activity were recorded at the same time.",
++    processing: [
++      "Every number comes from the study’s own ECG analysis code, the same code used on study recordings.",
++      "The raw signal is filtered to 0.5–40 Hz with a mains-hum notch, and its polarity is checked so beats point upwards.",
++      "Each heartbeat (R peak) is located, and the time between beats gives the heart rate. Intervals that are physiologically impossible or far from their neighbours are marked irregular and left out.",
++      "Signal quality is rated every 5 seconds: clean, irregular beats, or movement artefact.",
++    ],
++    limits: [
++      "This is a public stand-in until the study’s own ECG recordings are released.",
++      "It was recorded with a different device and lead from the study’s chest strap, and resampled to 248 Hz for the web.",
++      "Five minutes is short for the slower heart-rate-variability measures, so the excerpt is best read for signal quality and heart rate.",
++    ],
++  },
++  rppg: {
++    recording:
++      "A simulated face colour trace with a known pulse: the head is still, then moves for ten seconds, then is still again. Simulation lets the page show the method before the study’s own camera recordings are released.",
++    processing: [
++      "Each video frame is reduced to one average colour for the face.",
++      "The POS method combines the red, green and blue changes so that skin tone and lighting cancel out, leaving the pulse.",
++      "Heart rate is the strongest rhythm in the 42–180 bpm range, re-measured over a 10-second window every second.",
++      "Signal quality compares the pulse’s strength with everything else in that range. Below the floor, the page reports nothing rather than a guess.",
++      "The analysis is the study’s rPPG code (cvpr-lab), run without its trained model, which has no trained weights yet.",
++    ],
++    limits: [
++      "The sample is simulated, not a recording of a person. A real public sample will replace it.",
++      "Camera-based pulse is sensitive to movement and lighting; the head-motion stretch shows what that looks like.",
++      "Blood pressure and blood oxygen are not shown: a camera can only estimate them after calibration against a real device.",
++    ],
++  },
++};
++
+ /** One line under each widget, saying what it shows in everyday words. */
+ export const CAPTIONS: Record<ModalityKey, Record<string, string>> = {
+   thermal: {

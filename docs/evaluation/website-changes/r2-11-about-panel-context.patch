@@ -1,0 +1,100 @@
+diff --git a/website/src/components/modality/explain.tsx b/website/src/components/modality/explain.tsx
+index 0266a08..09e5e3c 100644
+--- a/website/src/components/modality/explain.tsx
++++ b/website/src/components/modality/explain.tsx
+@@ -3,7 +3,7 @@
+ import type { ReactNode } from "react";
+ import { Tooltip } from "radix-ui";
+ import { Lightbulb } from "lucide-react";
+-import { ABOUT, HOW_TO_READ, TERMS, type ModalityKey } from "@/lib/explanations";
++import { ABOUT, TERMS, type ModalityKey } from "@/lib/explanations";
+ 
+ /** A jargon word with its plain definition on hover or keyboard focus. */
+ export function Term({ name, children }: { name: keyof typeof TERMS | string; children?: ReactNode }) {
+@@ -45,15 +45,11 @@ export function AboutData({ modality }: { modality: ModalityKey }) {
+           About this data
+         </h2>
+         <p className="leading-relaxed">{a.shows}</p>
++        <p className="text-sm leading-relaxed text-muted-foreground">{a.recorded}</p>
+       </div>
+       <div className="flex flex-col gap-2">
+-        <h3 className="text-sm font-semibold">What to look for</h3>
+-        <ul className="flex list-disc flex-col gap-1 pl-5 text-sm leading-relaxed">
+-          {a.lookFor.map((line) => (
+-            <li key={line}>{line}</li>
+-          ))}
+-        </ul>
+-        <p className="text-xs text-muted-foreground">{HOW_TO_READ}</p>
++        <h3 className="text-sm font-semibold">On this dashboard</h3>
++        <p className="text-sm leading-relaxed">{a.dashboard}</p>
+       </div>
+     </section>
+   );
+diff --git a/website/src/lib/explanations.ts b/website/src/lib/explanations.ts
+index 03e3396..0aedc44 100644
+--- a/website/src/lib/explanations.ts
++++ b/website/src/lib/explanations.ts
+@@ -4,44 +4,42 @@
+ 
+ export type ModalityKey = "thermal" | "ecg" | "rppg";
+ 
+-/** General, modality-level copy for the dashboard. Nothing here depends on
+- *  which recording is shown; recording specifics live in the details card. */
++/** Short copy for the panel at the top of each dashboard. Fuller recording
++ *  specifics live in the details card. */
+ export type About = {
+   /** what this kind of data is, in one or two sentences */
+   shows: string;
+-  /** how to tell clean data apart on this page */
+-  lookFor: string[];
++  /** one line of context: where this sample was recorded, which explains the
++   *  phase labels on the charts */
++  recorded: string;
++  /** what the dashboard below displays */
++  dashboard: string;
+ };
+ 
+-export const HOW_TO_READ = "Hover a chart to read values. Drag a box by its title to rearrange.";
+-
+ export const ABOUT: Record<ModalityKey, About> = {
+   thermal: {
+     shows:
+       "A thermal camera measures the temperature of every point on the face. Emotion and stress change blood flow, which shows up as small temperature shifts around the nose, eyes and forehead.",
+-    lookFor: [
+-      "Brighter colours are warmer skin.",
+-      "Each tracked face region has its own line over time.",
+-      "Smooth, steady lines mean a clean recording.",
+-    ],
++    recorded:
++      "This sample was filmed while a person drank a cold glass of juice, hence the Before, Drinking and After labels on the charts.",
++    dashboard:
++      "The thermal video, the temperature of each face region now and over time, the spread of temperatures across the frame, each region’s range, and quick figures for the frame on screen.",
+   },
+   ecg: {
+     shows:
+       "An ECG records the heart’s electrical activity. Each sharp spike is one heartbeat, and the timing between spikes gives the heart rate.",
+-    lookFor: [
+-      "Clean data: tall, evenly shaped spikes on a flat baseline.",
+-      "The coloured strip rates every 5 seconds: clean, irregular or affected by movement.",
+-      "A tight average beat means the beats are consistent.",
+-    ],
++    recorded:
++      "This sample comes from a driver in the Boston area, first parked at rest and then driving through city traffic, hence the Rest and City labels on the charts.",
++    dashboard:
++      "The raw and cleaned signal, the average heart rate, an overall quality rating, a quality rating for every 5 seconds of the recording, heart rate beat by beat, and the average heartbeat shape.",
+   },
+   rppg: {
+     shows:
+       "rPPG measures the pulse with an ordinary camera: every heartbeat changes the skin’s colour very slightly, too little for the eye to see.",
+-    lookFor: [
+-      "Clean data: a regular wave with one peak per heartbeat.",
+-      "The dashed line is a fingertip pulse sensor, for comparison.",
+-      "The coloured strip marks stretches where movement made the signal unreliable.",
+-    ],
++    recorded:
++      "This sample is simulated: the head stays still, moves for ten seconds, then is still again, hence the Still and Head motion labels on the charts.",
++    dashboard:
++      "The face’s colour and the pulse extracted from it, the camera’s heart rate against a fingertip sensor, an overall quality rating, a quality rating for every 5 seconds, and the average pulse shape.",
+   },
+ };
+ 

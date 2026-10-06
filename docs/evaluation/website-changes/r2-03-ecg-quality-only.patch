@@ -1,0 +1,443 @@
+diff --git a/website/src/components/modality/ecg-explorer.tsx b/website/src/components/modality/ecg-explorer.tsx
+index f25702e..348efe8 100644
+--- a/website/src/components/modality/ecg-explorer.tsx
++++ b/website/src/components/modality/ecg-explorer.tsx
+@@ -3,13 +3,13 @@
+ import { cloneElement, isValidElement, useMemo, useState, type ReactElement } from "react";
+ import Link from "next/link";
+ import { useAsset } from "@/lib/use-json";
+-import { dataUrl, type DataIndex, type EcgSession, type QualityStatus, type SeriesBlock } from "@/lib/sample-data";
+-import { ChartFrame, Legend, Tooltip, linePath, linear, niceTicks, extent, useSize } from "@/components/viz/chart";
++import { dataUrl, type DataIndex, type EcgSession, type QualityStatus } from "@/lib/sample-data";
++import { ChartFrame, Tooltip, linePath, linear, niceTicks, extent, useSize } from "@/components/viz/chart";
+ import { ModalityHeader, StatusBadge, fmt } from "@/components/modality/kit";
+-import { BigNumber, Facts, WidgetShell } from "@/components/modality/widget";
++import { BigNumber, WidgetShell } from "@/components/modality/widget";
+ import { RequestAccess } from "@/components/modality/request-access";
+ import { DraggableWidgetGrid, type WidgetItem } from "@/components/ui/draggable-widget-grid";
+-import { AboutData, Term } from "@/components/modality/explain";
++import { AboutData } from "@/components/modality/explain";
+ import { CAPTIONS } from "@/lib/explanations";
+ 
+ const WINDOW_S = 10;
+@@ -19,21 +19,14 @@ const STATUS_COLOR: Record<QualityStatus, string> = {
+   critical: "var(--status-critical)",
+ };
+ 
++// Kept to what shows how clean the recording is (Lab 7 review).
+ const WIDGETS: WidgetItem[] = [
+   { id: "trace", size: "lg", label: "Raw and cleaned ECG" },
+   { id: "hr-now", size: "sm", label: "Mean heart rate" },
+-  { id: "hrv", size: "sm", label: "Heart-rate variability" },
++  { id: "quality", size: "sm", label: "Signal quality" },
+   { id: "overview", size: "wide", label: "Excerpt overview and signal quality" },
+-  { id: "drive", size: "wide", label: "The whole drive" },
+   { id: "hr", size: "wide", label: "Heart rate over time" },
+-  { id: "resp", size: "wide", label: "Respiration" },
+-  { id: "skin", size: "wide", label: "Skin conductance" },
+-  { id: "quality", size: "sm", label: "Signal quality" },
+-  { id: "beat", size: "sm", label: "Average heartbeat" },
+-  { id: "poincare", size: "sm", label: "Beat-to-beat map" },
+-  { id: "spectrum", size: "wide", label: "Rhythm spectrum" },
+-  { id: "facts", size: "sm", label: "Recording details" },
+-  { id: "emg", size: "wide", label: "Shoulder EMG" },
++  { id: "beat", size: "wide", label: "Average heartbeat" },
+ ];
+ 
+ export function EcgExplorer() {
+@@ -74,18 +67,6 @@ function Dashboard({ session }: { session: EcgSession }) {
+             <BigNumber value={fmt(h.mean_hr_bpm, 0)} unit="bpm" sub={`range ${fmt(h.min_hr_bpm, 0)}–${fmt(h.max_hr_bpm, 0)}`} />
+           </WidgetShell>
+         );
+-      case "hrv":
+-        return (
+-          <WidgetShell title="Variability" note="time between beats">
+-            <Facts
+-              rows={[
+-                [<Term key="rmssd" name="RMSSD" />, `${fmt(h.rmssd_ms, 0)} ms`],
+-                [<Term key="sdnn" name="SDNN" />, `${fmt(h.sdnn_ms, 0)} ms`],
+-                [<Term key="pnn50" name="pNN50" />, `${fmt(h.pnn50_pct, 0)}%`],
+-              ]}
+-            />
+-          </WidgetShell>
+-        );
+       case "overview":
+         return (
+           <WidgetShell
+@@ -121,85 +102,12 @@ function Dashboard({ session }: { session: EcgSession }) {
+             </div>
+           </WidgetShell>
+         );
+-      case "facts":
+-        return (
+-          <WidgetShell title="Recording">
+-            <Facts
+-              rows={[
+-                ["Record", session.subject.id],
+-                ["Excerpt", `${fmtClock(session.source?.windowStartS ?? 0)}–${fmtClock((session.source?.windowStartS ?? 0) + session.durationS)}`],
+-                ["ECG", `${session.device.fs} Hz · ${session.device.units}`],
+-                ["Also has", "Resp · EDA · EMG"],
+-                ["Licence", session.source?.license ?? "—"],
+-              ]}
+-            />
+-          </WidgetShell>
+-        );
+-      case "drive":
+-        return session.drive ? (
+-          <WidgetShell title="The whole drive" note={`${Math.round(session.drive.durationS / 60)} min · highlighted: the excerpt on this page`}>
+-            <DriveOverview drive={session.drive} windowStart={session.source?.windowStartS ?? 0} windowLength={session.durationS} />
+-          </WidgetShell>
+-        ) : null;
+-      case "resp":
+-        return session.companions ? (
+-          <WidgetShell title="Respiration" note={breathingNote(session.companions.resp, session.phases)}>
+-            <SeriesChart
+-              session={session}
+-              series={[{ key: "resp", label: "Chest expansion", color: "var(--series-1)", block: session.companions.resp }]}
+-            />
+-          </WidgetShell>
+-        ) : null;
+-      case "skin":
+-        return session.companions ? (
+-          <WidgetShell title="Skin conductance" note="rises with arousal · same excerpt">
+-            <SeriesChart
+-              session={session}
+-              series={[
+-                { key: "hand", label: "Hand", color: "var(--series-1)", block: session.companions.handGSR },
+-                { key: "foot", label: "Foot", color: "var(--series-2)", block: session.companions.footGSR },
+-              ]}
+-            />
+-          </WidgetShell>
+-        ) : null;
+-      case "emg":
+-        return session.companions ? (
+-          <WidgetShell title="Shoulder EMG" note="trapezius muscle activity · same excerpt">
+-            <SeriesChart
+-              session={session}
+-              series={[{ key: "emg", label: "EMG", color: "var(--series-1)", block: session.companions.emg }]}
+-            />
+-          </WidgetShell>
+-        ) : null;
+       case "beat":
+         return (
+           <WidgetShell title="Average beat" note={`${session.averageBeat.n} beats · ±1 SD`}>
+             <AverageBeat session={session} />
+           </WidgetShell>
+         );
+-      case "poincare":
+-        return (
+-          <WidgetShell
+-            title="Beat-to-beat map"
+-            note={`SD1 ${fmt(session.hrv.poincare.sd1_ms, 0)} · SD2 ${fmt(session.hrv.poincare.sd2_ms, 0)} ms`}
+-          >
+-            <PoincarePlot session={session} />
+-          </WidgetShell>
+-        );
+-      case "spectrum":
+-        return (
+-          <WidgetShell
+-            title="Rhythm spectrum"
+-            note={
+-              <>
+-                <Term name="LF/HF" /> {fmt(session.hrv.frequency.lf_hf_ratio, 2)}
+-                {session.hrv.frequency.shortRecord ? " · indicative (< 5 min)" : ""}
+-              </>
+-            }
+-          >
+-            <Spectrum session={session} />
+-          </WidgetShell>
+-        );
+       default:
+         return null;
+     }
+@@ -538,262 +446,3 @@ function AverageBeat({ session }: { session: EcgSession }) {
+     </div>
+   );
+ }
+-
+-function PoincarePlot({ session }: { session: EcgSession }) {
+-  const [ref, size] = useSize<HTMLDivElement>();
+-  const [hover, setHover] = useState<number | null>(null);
+-  const clean = session.rr.ms.filter((_, i) => session.rr.valid[i]);
+-  const pts = clean.slice(0, -1).map((v, i) => [v, clean[i + 1]] as const);
+-  const side = Math.min(size.width, size.height);
+-  const margin = { top: 6, right: 6, bottom: 22, left: 36 };
+-  const dom = extent(clean, 0.12);
+-  const x = linear(dom, [margin.left, side - margin.right]);
+-  const y = linear(dom, [side - margin.bottom, margin.top]);
+-  const ticks = niceTicks(dom[0], dom[1], 3);
+-
+-  return (
+-    <div ref={ref} className="absolute inset-0 flex justify-center">
+-      <div style={{ width: side }} data-no-drag className="relative">
+-        <ChartFrame
+-          width={side}
+-          height={side}
+-          margin={margin}
+-          x={x}
+-          y={y}
+-          xTicks={ticks}
+-          yTicks={ticks}
+-          xFormat={(v) => v.toFixed(0)}
+-          yFormat={(v) => v.toFixed(0)}
+-          ariaLabel="Each beat interval plotted against the next"
+-        >
+-          <line x1={x(dom[0])} y1={y(dom[0])} x2={x(dom[1])} y2={y(dom[1])} stroke="var(--viz-axis)" strokeWidth={1} />
+-          {pts.map(([a, b], i) => (
+-            <circle key={i} cx={x(a)} cy={y(b)} r={hover === i ? 5.5 : 4} fill="var(--series-1)" fillOpacity={0.75} stroke="var(--card)" strokeWidth={2} />
+-          ))}
+-          {pts.map(([a, b], i) => (
+-            <circle key={`hit${i}`} cx={x(a)} cy={y(b)} r={12} fill="transparent" onPointerEnter={() => setHover(i)} onPointerLeave={() => setHover(null)} />
+-          ))}
+-        </ChartFrame>
+-        {hover !== null && (
+-          <p className="pointer-events-none absolute right-0 top-0 rounded-md border border-border bg-popover px-2 py-1 text-xs tabular-nums shadow">
+-            {pts[hover][0].toFixed(0)} → {pts[hover][1].toFixed(0)} ms
+-          </p>
+-        )}
+-      </div>
+-    </div>
+-  );
+-}
+-
+-function Spectrum({ session }: { session: EcgSession }) {
+-  const [ref, size] = useSize<HTMLDivElement>();
+-  if (!session.psd) return <p className="text-sm text-muted-foreground">Recording too short.</p>;
+-  // VLF (< 0.04 Hz) needs 5+ minutes of data and mostly reflects slow trends
+-  // here, which would dwarf the LF/HF bands — so the plot starts at LF.
+-  const keep = session.psd.freqs.map((f) => f >= 0.04);
+-  const freqs = session.psd.freqs.filter((_, i) => keep[i]);
+-  const power = session.psd.power.filter((_, i) => keep[i]);
+-  const { width, height } = size;
+-  const margin = { top: 16, right: 8, bottom: 22, left: 44 };
+-  const x = linear([0.04, 0.5], [margin.left, width - margin.right]);
+-  const y = linear([0, Math.max(...power) * 1.1], [height - margin.bottom, margin.top]);
+-  const area = `${linePath(freqs, power, x, y)}L${x(freqs[freqs.length - 1])},${y(0)}L${x(freqs[0])},${y(0)}Z`;
+-
+-  return (
+-    <div ref={ref} className="absolute inset-0">
+-      <ChartFrame
+-        width={width}
+-        height={height}
+-        margin={margin}
+-        x={x}
+-        y={y}
+-        xTicks={[0.1, 0.2, 0.3, 0.4, 0.5]}
+-        yTicks={niceTicks(0, y.domain[1], 3)}
+-        xFormat={(v) => `${v} Hz`}
+-        yFormat={(v) => v.toFixed(0)}
+-        bands={[
+-          { from: 0.04, to: 0.15, label: "LF", shaded: true },
+-          { from: 0.15, to: 0.4, label: "HF", shaded: false },
+-        ]}
+-        ariaLabel="Power spectrum of the beat-interval series"
+-      >
+-        <path d={area} fill="var(--series-1)" opacity={0.18} />
+-        <path d={linePath(freqs, power, x, y)} fill="none" stroke="var(--series-1)" strokeWidth={2} />
+-      </ChartFrame>
+-    </div>
+-  );
+-}
+-
+-const fmtClock = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+-
+-/** Breaths per minute in each phase, from upward crossings of the detrended trace. */
+-function breathingNote(resp: SeriesBlock, phases: EcgSession["phases"]) {
+-  const { fs, values } = resp;
+-  const win = Math.round(fs * 10);
+-  const detrended = values.map((v, i) => {
+-    const seg = values.slice(Math.max(0, i - win / 2), i + win / 2);
+-    return v - seg.reduce((a, b) => a + b, 0) / seg.length;
+-  });
+-  const rate = (a: number, b: number) => {
+-    let n = 0;
+-    let last = -Infinity;
+-    for (let i = Math.floor(a * fs) + 1; i < Math.min(detrended.length, b * fs); i++) {
+-      if (detrended[i - 1] < 0 && detrended[i] >= 0 && i - last > 1.5 * fs) {
+-        n++;
+-        last = i;
+-      }
+-    }
+-    return Math.round((n / (b - a)) * 60);
+-  };
+-  return phases.map((p) => `${p.name.toLowerCase()} ≈ ${rate(p.startS, p.endS)}/min`).join(" · ");
+-}
+-
+-/** One or more companion signals over the excerpt, on a shared axis. */
+-function SeriesChart({
+-  session,
+-  series,
+-}: {
+-  session: EcgSession;
+-  series: { key: string; label: string; color: string; block: SeriesBlock }[];
+-}) {
+-  const [ref, size] = useSize<HTMLDivElement>();
+-  const [hover, setHover] = useState<{ t: number; at: { x: number; y: number } } | null>(null);
+-  const { width } = size;
+-  const legend = series.length > 1;
+-  const height = Math.max(80, size.height - (legend ? 20 : 0));
+-  const margin = { top: 16, right: 8, bottom: 22, left: 40 };
+-  const x = linear([0, session.durationS], [margin.left, width - margin.right]);
+-  const y = linear(extent(series.flatMap((s) => s.block.values), 0.08), [height - margin.bottom, margin.top]);
+-  const at = (b: SeriesBlock, t: number) => b.values[Math.min(b.values.length - 1, Math.max(0, Math.round(t * b.fs)))];
+-
+-  return (
+-    <div ref={ref} data-no-drag className="absolute inset-0 flex flex-col">
+-      {legend && <Legend items={series.map((s) => ({ key: s.key, label: s.label, color: s.color }))} />}
+-      <div className="relative">
+-        <ChartFrame
+-          width={width}
+-          height={height}
+-          margin={margin}
+-          x={x}
+-          y={y}
+-          xTicks={niceTicks(0, session.durationS, 5)}
+-          yTicks={niceTicks(y.domain[0], y.domain[1], 3)}
+-          xFormat={(v) => `${v}s`}
+-          yFormat={(v) => (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1))}
+-          yLabel={series[0].block.units}
+-          bands={session.phases.map((p, i) => ({ from: p.startS, to: p.endS, label: p.name, shaded: i % 2 === 1 }))}
+-          ariaLabel={series.map((s) => s.label).join(" and ") + " over the excerpt"}
+-          onHover={(v, px) => setHover(v === null || !px ? null : { t: v, at: px })}
+-        >
+-          {series.map((s) => (
+-            <path
+-              key={s.key}
+-              d={linePath(s.block.values.map((_, i) => i / s.block.fs), s.block.values, x, y)}
+-              fill="none"
+-              stroke={s.color}
+-              strokeWidth={1.5}
+-              strokeLinejoin="round"
+-            />
+-          ))}
+-          {hover && <line x1={x(hover.t)} x2={x(hover.t)} y1={y.range[1]} y2={y.range[0]} stroke="var(--viz-muted)" strokeWidth={1} />}
+-        </ChartFrame>
+-        <Tooltip at={hover?.at ?? null} containerWidth={width}>
+-          {hover && (
+-            <>
+-              <p className="mb-0.5 font-medium tabular-nums">{hover.t.toFixed(1)} s</p>
+-              {series.map((s) => (
+-                <p key={s.key} className="flex items-center justify-between gap-4 tabular-nums">
+-                  <span className="text-muted-foreground">{s.label}</span>
+-                  {at(s.block, hover.t).toFixed(2)} {s.block.units}
+-                </p>
+-              ))}
+-            </>
+-          )}
+-        </Tooltip>
+-      </div>
+-    </div>
+-  );
+-}
+-
+-/** The whole original drive as two small multiples (heart rate, skin conductance). */
+-function DriveOverview({
+-  drive,
+-  windowStart,
+-  windowLength,
+-}: {
+-  drive: NonNullable<EcgSession["drive"]>;
+-  windowStart: number;
+-  windowLength: number;
+-}) {
+-  const [ref, size] = useSize<HTMLDivElement>();
+-  const [hover, setHover] = useState<{ t: number; at: { x: number; y: number } } | null>(null);
+-  const { width } = size;
+-  const each = Math.max(60, Math.floor((size.height - 4) / 2));
+-  const minutes = drive.durationS / 60;
+-  const t = drive.hr.map((_, i) => (i * drive.stepS) / 60);
+-  const hr = drive.hr.map((v) => (v === null ? NaN : v));
+-  const panels = [
+-    { key: "hr", label: "Heart rate", unit: "bpm", values: hr, top: true },
+-    { key: "eda", label: "Hand EDA", unit: "a.u.", values: drive.handGSR, top: false },
+-  ];
+-  const idx = hover ? Math.min(t.length - 1, Math.max(0, Math.round((hover.t * 60) / drive.stepS))) : null;
+-  const seg = hover ? drive.segments.find((s) => hover.t * 60 >= s.startS && hover.t * 60 < s.endS) : null;
+-
+-  return (
+-    <div ref={ref} data-no-drag className="absolute inset-0 flex flex-col gap-1">
+-      {panels.map((p) => {
+-        const margin = { top: p.top ? 16 : 4, right: 8, bottom: p.top ? 4 : 20, left: 40 };
+-        const x = linear([0, minutes], [margin.left, width - margin.right]);
+-        const y = linear(extent(p.values.filter(Number.isFinite), 0.1), [each - margin.bottom, margin.top]);
+-        return (
+-          <div key={p.key} className="relative">
+-            <ChartFrame
+-              width={width}
+-              height={each}
+-              margin={margin}
+-              x={x}
+-              y={y}
+-              xTicks={p.top ? [] : niceTicks(0, minutes, 6)}
+-              yTicks={niceTicks(y.domain[0], y.domain[1], 2)}
+-              xFormat={(v) => `${v}m`}
+-              yFormat={(v) => v.toFixed(0)}
+-              yLabel={p.unit}
+-              bands={drive.segments.map((s, i) => ({
+-                from: s.startS / 60,
+-                to: s.endS / 60,
+-                label: p.top ? s.name : "",
+-                shaded: i % 2 === 1,
+-              }))}
+-              ariaLabel={`${p.label} across the whole drive`}
+-              onHover={(v, px) => setHover(v === null || !px ? null : { t: v, at: px })}
+-            >
+-              <rect
+-                x={x(windowStart / 60)}
+-                y={y.range[1]}
+-                width={x((windowStart + windowLength) / 60) - x(windowStart / 60)}
+-                height={y.range[0] - y.range[1]}
+-                fill="var(--series-1)"
+-                fillOpacity={0.14}
+-                stroke="var(--series-1)"
+-                strokeWidth={1}
+-              />
+-              <path d={linePath(t, p.values, x, y)} fill="none" stroke="var(--series-1)" strokeWidth={1.5} strokeLinejoin="round" />
+-              {hover && <line x1={x(hover.t)} x2={x(hover.t)} y1={y.range[1]} y2={y.range[0]} stroke="var(--viz-muted)" strokeWidth={1} />}
+-            </ChartFrame>
+-          </div>
+-        );
+-      })}
+-      <Tooltip at={hover?.at ?? null} containerWidth={width}>
+-        {idx !== null && (
+-          <>
+-            <p className="mb-0.5 font-medium tabular-nums">
+-              {t[idx].toFixed(1)} min{seg ? ` · ${seg.name}` : ""}
+-            </p>
+-            <p className="tabular-nums text-muted-foreground">
+-              {Number.isFinite(hr[idx]) ? `${hr[idx].toFixed(0)} bpm` : "—"} · EDA {drive.handGSR[idx]?.toFixed(2)}
+-            </p>
+-          </>
+-        )}
+-      </Tooltip>
+-    </div>
+-  );
+-}
+diff --git a/website/src/lib/explanations.ts b/website/src/lib/explanations.ts
+index 9ca28a8..5c1417a 100644
+--- a/website/src/lib/explanations.ts
++++ b/website/src/lib/explanations.ts
+@@ -58,19 +58,11 @@ export const CAPTIONS: Record<ModalityKey, Record<string, string>> = {
+   },
+   ecg: {
+     trace: "The heart’s electrical signal as recorded (top) and after noise is removed (bottom). Each dot is one heartbeat.",
+-    "hr-now": "Average beats per minute over the whole five minutes.",
+-    hrv: "How much the time between beats varies. More variation usually means a more relaxed body.",
+-    overview: "The whole five minutes at a glance. The coloured strip shows how clean the signal is in each 5-second stretch.",
+-    drive: "The entire 84-minute drive this excerpt comes from, with rest, city and highway sections.",
+-    hr: "Heart rate beat by beat. Watch it climb after city driving starts.",
+-    resp: "Chest movement from a breathing belt worn at the same time; each wave is one breath.",
+-    skin: "Skin conductance rises when we sweat slightly, a classic sign of stress or alertness.",
++    "hr-now": "Average beats per minute over the whole recording.",
++    overview: "The whole recording at a glance. The coloured strip shows how clean the signal is in each 5-second stretch.",
++    hr: "Heart rate beat by beat. Hollow dots are irregular beats, left out of the analysis.",
+     quality: "Whether the recording is clean enough to trust, and how many beats were left out.",
+-    beat: "Every heartbeat laid on top of each other and averaged: the classic heartbeat shape.",
+-    poincare: "Each dot is one gap between beats plotted against the next. A tighter cloud means a steadier rhythm.",
+-    spectrum: "Which slow rhythms drive the changes in heart rate: breathing shows up on the right (HF), stress-linked rhythms on the left (LF).",
+-    facts: "Where this recording comes from and what else was measured with it.",
+-    emg: "Shoulder muscle tension recorded at the same time; it tends to rise with stress.",
++    beat: "Every heartbeat laid on top of each other and averaged. A narrow band around the line means consistent, clean beats.",
+   },
+   rppg: {
+     pulse: "Top: the face’s average green colour, barely changing. Bottom: the pulse extracted from it, with the fingertip sensor dashed.",

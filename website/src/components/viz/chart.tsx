@@ -160,7 +160,7 @@ export function ChartFrame({
             x={(x(b.from) + x(b.to)) / 2}
             y={y0 - 6}
             textAnchor="middle"
-            fontSize={10}
+            fontSize={12}
             fill="var(--viz-muted)"
             letterSpacing="0.06em"
           >
@@ -172,24 +172,24 @@ export function ChartFrame({
       {yTicks.map((t) => (
         <g key={`y${t}`}>
           <line x1={x0} x2={x1} y1={y(t)} y2={y(t)} stroke="var(--viz-grid)" strokeWidth={1} />
-          <text x={x0 - 8} y={y(t)} dy="0.32em" textAnchor="end" fontSize={10.5} fill="var(--viz-muted)" className="tabular-nums">
+          <text x={x0 - 8} y={y(t)} dy="0.32em" textAnchor="end" fontSize={12} fill="var(--viz-muted)" className="tabular-nums">
             {yFormat(t)}
           </text>
         </g>
       ))}
       <line x1={x0} x2={x1} y1={y1} y2={y1} stroke="var(--viz-axis)" strokeWidth={1} />
       {xTicks.map((t) => (
-        <text key={`x${t}`} x={x(t)} y={y1 + 16} textAnchor="middle" fontSize={10.5} fill="var(--viz-muted)" className="tabular-nums">
+        <text key={`x${t}`} x={x(t)} y={y1 + 16} textAnchor="middle" fontSize={12} fill="var(--viz-muted)" className="tabular-nums">
           {xFormat(t)}
         </text>
       ))}
       {yLabel && (
-        <text x={x0 - 8} y={y0 - 6} textAnchor="end" fontSize={10} fill="var(--viz-muted)">
+        <text x={x0 - 8} y={y0 - 6} textAnchor="end" fontSize={12} fill="var(--viz-muted)">
           {yLabel}
         </text>
       )}
       {xLabel && (
-        <text x={x1} y={y1 + 30} textAnchor="end" fontSize={10} fill="var(--viz-muted)">
+        <text x={x1} y={y1 + 30} textAnchor="end" fontSize={12} fill="var(--viz-muted)">
           {xLabel}
         </text>
       )}

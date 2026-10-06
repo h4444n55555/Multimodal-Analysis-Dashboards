@@ -144,7 +144,7 @@ function TaskCard({
               style={{ transform: "rotateY(180deg)" }}
             >
               <div className="flex shrink-0 items-start justify-between gap-3">
-                <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
                   {task.title}
                 </span>
                 <CornerDownLeft className="h-4 w-4 shrink-0 text-muted-foreground" />

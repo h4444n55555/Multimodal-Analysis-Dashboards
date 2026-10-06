@@ -1,0 +1,153 @@
+diff --git a/website/src/app/(home)/page.tsx b/website/src/app/(home)/page.tsx
+index 5676987..46c79ef 100644
+--- a/website/src/app/(home)/page.tsx
++++ b/website/src/app/(home)/page.tsx
+@@ -5,9 +5,7 @@ import { TestimonialCarousel } from "@/components/ui/profile-card-testimonial-ca
+ import { VerticalTabs } from "@/components/ui/vertical-tabs";
+ import MultimodalPipeline from "@/components/ui/pipeline-visualization";
+ import { TaskBento } from "@/components/ui/task-bento";
+-import { Applications } from "@/components/ui/applications";
+-import { ModalityCards } from "@/components/ui/modality-cards";
+-import Text3DFlip from "@/registry/magicui/text-3d-flip";
++import { Applications } from "@/components/ui/applications";import Text3DFlip from "@/registry/magicui/text-3d-flip";
+ import { Highlighter } from "@/registry/magicui/highlighter";
+ 
+ export default function Home() {
+@@ -83,7 +81,6 @@ export default function Home() {
+         {/* Modalities → data dashboards */}
+         <section id="sensors" className="scroll-mt-24">
+           <VerticalTabs />
+-          <ModalityCards />
+         </section>
+ 
+         {/* Downstream tasks */}
+diff --git a/website/src/components/ui/animated-hero.tsx b/website/src/components/ui/animated-hero.tsx
+index d9aaf5d..5f8a237 100644
+--- a/website/src/components/ui/animated-hero.tsx
++++ b/website/src/components/ui/animated-hero.tsx
+@@ -73,7 +73,7 @@ function Hero() {
+           </div>
+           <div className="flex flex-wrap items-center justify-center gap-3">
+             <Button asChild size="lg" className="gap-2">
+-              <a href="#data">
++              <a href="#sensors">
+                 Explore the data
+                 <ArrowDown className="size-4" aria-hidden="true" />
+               </a>
+diff --git a/website/src/components/ui/footer-section.tsx b/website/src/components/ui/footer-section.tsx
+index 855e143..2b59042 100644
+--- a/website/src/components/ui/footer-section.tsx
++++ b/website/src/components/ui/footer-section.tsx
+@@ -6,7 +6,7 @@ import { motion, useReducedMotion } from "motion/react";
+ import type { ComponentProps, ReactNode } from "react";
+ 
+ const siteLinks = [
+-  { label: "All data", href: "/#data" },
++  { label: "All data", href: "/#sensors" },
+   { label: "Thermal data", href: "/thermal" },
+   { label: "ECG data", href: "/ecg" },
+   { label: "rPPG data", href: "/rppg" },
+diff --git a/website/src/lib/modalities.ts b/website/src/lib/modalities.ts
+index 3af71e2..742d8a6 100644
+--- a/website/src/lib/modalities.ts
++++ b/website/src/lib/modalities.ts
+@@ -9,8 +9,6 @@ export type Modality = {
+   summary: string;
+   /** one short line: what the signal measures, in everyday words */
+   measures: string;
+-  /** what the published sample on the data page contains */
+-  sample: string;
+   /** null until the modality has a data page */
+   href: string | null;
+ };
+@@ -22,9 +20,7 @@ export const MODALITIES: Modality[] = [
+     title: "Thermal",
+     device: "FLIR C5 · 160 × 120",
+     summary: "Per-pixel facial temperature. Stress and arousal show up as heat moving across the face — the nose tip cools, the inner eye corners warm, and every breath warms the skin under the nostrils.",
+-    measures: "Skin temperature across the face, from a heat camera.",
+-    sample: "12 s of thermal video, with temperatures tracked in four face regions.",
+-    href: "/thermal",
++    measures: "Skin temperature across the face, from a heat camera.",    href: "/thermal",
+   },
+   {
+     key: "ecg",
+@@ -32,9 +28,7 @@ export const MODALITIES: Modality[] = [
+     title: "ECG",
+     device: "Frontier X2 · single lead · 125 Hz",
+     summary: "The heart's electrical trace, beat by beat. Heart rate and its variability track the balance between the stress and rest branches of the nervous system.",
+-    measures: "The heart’s electrical signal, beat by beat, from a chest sensor.",
+-    sample: "5 min of a driver’s ECG, at rest then in city traffic, with breathing and sweat.",
+-    href: "/ecg",
++    measures: "The heart’s electrical signal, beat by beat, from a chest sensor.",    href: "/ecg",
+   },
+   {
+     key: "emg",
+@@ -42,9 +36,7 @@ export const MODALITIES: Modality[] = [
+     title: "EMG",
+     device: "Surface EMG array",
+     summary: "Surface muscle activity from facial and forearm electrodes — the involuntary micro-contractions that accompany expressions too brief to see on camera.",
+-    measures: "Tiny muscle movements in the face and forearm, from skin electrodes.",
+-    sample: "Sample data coming soon.",
+-    href: null,
++    measures: "Tiny muscle movements in the face and forearm, from skin electrodes.",    href: null,
+   },
+   {
+     key: "rppg",
+@@ -52,8 +44,6 @@ export const MODALITIES: Modality[] = [
+     title: "rPPG",
+     device: "RGB camera",
+     summary: "Contactless pulse recovered from subtle skin-colour changes in ordinary video, checked against the ECG recorded in the same session.",
+-    measures: "Your pulse from an ordinary camera, with nothing touching the skin.",
+-    sample: "75 s of face colour turned into a pulse, checked against a fingertip sensor.",
+-    href: "/rppg",
++    measures: "Your pulse from an ordinary camera, with nothing touching the skin.",    href: "/rppg",
+   },
+ ];
+diff --git a/website/src/components/ui/modality-cards.tsx b/website/src/components/ui/modality-cards.tsx
+deleted file mode 100644
+index ecf0554..0000000
+--- a/website/src/components/ui/modality-cards.tsx
++++ /dev/null
+@@ -1,42 +0,0 @@
+-import Link from "next/link";
+-import { ArrowRight } from "lucide-react";
+-import { MODALITIES } from "@/lib/modalities";
+-
+-/** Every modality's data page at a glance, one card each, links always visible. */
+-export function ModalityCards() {
+-  return (
+-    <div id="data" className="mx-auto w-full max-w-7xl scroll-mt-24 px-4 pb-16 md:px-8 lg:px-12">
+-      <h3 className="text-lg font-semibold tracking-tight">Explore the sample data</h3>
+-      <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+-        Each page shows one sample recording, with a plain-language guide to what it shows.
+-      </p>
+-      <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+-        {MODALITIES.map((m) => (
+-          <li key={m.key} className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+-            <div className="flex items-baseline justify-between gap-2">
+-              <h4 className="text-xl font-medium tracking-tight">{m.title}</h4>
+-              <span className="text-xs tabular-nums text-muted-foreground">/{m.id}</span>
+-            </div>
+-            <p className="text-sm leading-snug">{m.measures}</p>
+-            <p className="text-sm leading-snug text-muted-foreground">{m.sample}</p>
+-            <div className="mt-auto pt-2">
+-              {m.href ? (
+-                <Link
+-                  href={m.href}
+-                  className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-85"
+-                >
+-                  Explore the data
+-                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+-                </Link>
+-              ) : (
+-                <span className="inline-flex rounded-full border border-dashed border-border px-4 py-2 text-sm text-muted-foreground">
+-                  Coming soon
+-                </span>
+-              )}
+-            </div>
+-          </li>
+-        ))}
+-      </ul>
+-    </div>
+-  );
+-}

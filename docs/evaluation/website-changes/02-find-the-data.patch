@@ -1,0 +1,319 @@
+diff --git a/website/src/app/(home)/page.tsx b/website/src/app/(home)/page.tsx
+index 122427a..2107174 100644
+--- a/website/src/app/(home)/page.tsx
++++ b/website/src/app/(home)/page.tsx
+@@ -6,6 +6,7 @@ import { VerticalTabs } from "@/components/ui/vertical-tabs";
+ import MultimodalPipeline from "@/components/ui/pipeline-visualization";
+ import { TaskBento } from "@/components/ui/task-bento";
+ import { Applications } from "@/components/ui/applications";
++import { ModalityCards } from "@/components/ui/modality-cards";
+ import Text3DFlip from "@/registry/magicui/text-3d-flip";
+ import { Highlighter } from "@/registry/magicui/highlighter";
+ 
+@@ -82,6 +83,7 @@ export default function Home() {
+         {/* Modalities → data dashboards */}
+         <section id="sensors" className="scroll-mt-24">
+           <VerticalTabs />
++          <ModalityCards />
+         </section>
+ 
+         {/* Downstream tasks */}
+diff --git a/website/src/components/site-nav.tsx b/website/src/components/site-nav.tsx
+index b88de86..fdf3709 100644
+--- a/website/src/components/site-nav.tsx
++++ b/website/src/components/site-nav.tsx
+@@ -25,7 +25,7 @@ import { MODALITIES } from "@/lib/modalities";
+ const sections = [
+   { id: "hero", label: "Overview" },
+   { id: "why", label: "Why This Research" },
+-  { id: "sensors", label: "Modalities" },
++  { id: "sensors", label: "Data" },
+   { id: "tasks", label: "Tasks" },
+   { id: "apps", label: "Built with the Data" },
+   { id: "status", label: "Research Pipeline" },
+@@ -88,27 +88,29 @@ export function SiteNav() {
+           {sections.map((s) =>
+             s.id === "sensors" ? (
+               <DropdownMenu key={s.id}>
++                {/* styled as a button so it reads as clickable (P5 in testing) */}
+                 <DropdownMenuTrigger
+                   className={cn(
+-                    "flex items-center gap-1 text-muted-foreground outline-none transition-colors hover:text-foreground aria-expanded:text-foreground",
+-                    onHome && active === s.id && "text-foreground font-medium",
++                    "flex items-center gap-1 rounded-full border border-border bg-muted/60 px-3 py-1 font-medium text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 aria-expanded:bg-muted",
++                    onHome && active === s.id && "border-foreground/40",
+                   )}
+                 >
+                   {s.label}
+-                  <ChevronDown className="size-3.5" />
++                  <ChevronDown className="size-3.5" aria-hidden="true" />
+                 </DropdownMenuTrigger>
+-                <DropdownMenuContent align="center">
++                <DropdownMenuContent align="center" className="w-72">
+                   {MODALITIES.map((m) =>
+                     m.href ? (
+                       <DropdownMenuItem key={m.key} asChild>
+-                        <Link href={m.href}>{m.title}</Link>
++                        <Link href={m.href} className="flex flex-col items-start gap-0.5">
++                          <span className="font-medium">{m.title}</span>
++                          <span className="text-xs text-muted-foreground">{m.measures}</span>
++                        </Link>
+                       </DropdownMenuItem>
+                     ) : (
+-                      <DropdownMenuItem key={m.key} disabled>
+-                        {m.title}
+-                        <span className="ml-auto text-xs text-muted-foreground">
+-                          Soon
+-                        </span>
++                      <DropdownMenuItem key={m.key} disabled className="flex flex-col items-start gap-0.5">
++                        <span className="font-medium">{m.title} · soon</span>
++                        <span className="text-xs text-muted-foreground">{m.measures}</span>
+                       </DropdownMenuItem>
+                     ),
+                   )}
+diff --git a/website/src/components/ui/animated-hero.tsx b/website/src/components/ui/animated-hero.tsx
+index 6074b5a..d9aaf5d 100644
+--- a/website/src/components/ui/animated-hero.tsx
++++ b/website/src/components/ui/animated-hero.tsx
+@@ -3,6 +3,7 @@
+ import { Button } from "@/components/ui/button";
+ import { useEffect, useMemo, useState } from "react";
+ import { motion } from "motion/react";
++import { ArrowDown } from "lucide-react";
+ 
+ function Hero() {
+   const [titleNumber, setTitleNumber] = useState(0);
+@@ -70,6 +71,14 @@ function Hero() {
+               follow.
+             </p>
+           </div>
++          <div className="flex flex-wrap items-center justify-center gap-3">
++            <Button asChild size="lg" className="gap-2">
++              <a href="#data">
++                Explore the data
++                <ArrowDown className="size-4" aria-hidden="true" />
++              </a>
++            </Button>
++          </div>
+         </div>
+       </div>
+     </div>
+diff --git a/website/src/components/ui/footer-section.tsx b/website/src/components/ui/footer-section.tsx
+index 8547353..855e143 100644
+--- a/website/src/components/ui/footer-section.tsx
++++ b/website/src/components/ui/footer-section.tsx
+@@ -6,9 +6,10 @@ import { motion, useReducedMotion } from "motion/react";
+ import type { ComponentProps, ReactNode } from "react";
+ 
+ const siteLinks = [
+-  { label: "Modalities", href: "/#sensors" },
++  { label: "All data", href: "/#data" },
+   { label: "Thermal data", href: "/thermal" },
+   { label: "ECG data", href: "/ecg" },
++  { label: "rPPG data", href: "/rppg" },
+   { label: "Built with the data", href: "/#apps" },
+   { label: "Research Pipeline", href: "/#status" },
+   { label: "Team", href: "/#team" },
+diff --git a/website/src/components/ui/modality-cards.tsx b/website/src/components/ui/modality-cards.tsx
+new file mode 100644
+index 0000000..ecf0554
+--- /dev/null
++++ b/website/src/components/ui/modality-cards.tsx
+@@ -0,0 +1,42 @@
++import Link from "next/link";
++import { ArrowRight } from "lucide-react";
++import { MODALITIES } from "@/lib/modalities";
++
++/** Every modality's data page at a glance, one card each, links always visible. */
++export function ModalityCards() {
++  return (
++    <div id="data" className="mx-auto w-full max-w-7xl scroll-mt-24 px-4 pb-16 md:px-8 lg:px-12">
++      <h3 className="text-lg font-semibold tracking-tight">Explore the sample data</h3>
++      <p className="mt-1 max-w-xl text-sm text-muted-foreground">
++        Each page shows one sample recording, with a plain-language guide to what it shows.
++      </p>
++      <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
++        {MODALITIES.map((m) => (
++          <li key={m.key} className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
++            <div className="flex items-baseline justify-between gap-2">
++              <h4 className="text-xl font-medium tracking-tight">{m.title}</h4>
++              <span className="text-xs tabular-nums text-muted-foreground">/{m.id}</span>
++            </div>
++            <p className="text-sm leading-snug">{m.measures}</p>
++            <p className="text-sm leading-snug text-muted-foreground">{m.sample}</p>
++            <div className="mt-auto pt-2">
++              {m.href ? (
++                <Link
++                  href={m.href}
++                  className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-85"
++                >
++                  Explore the data
++                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
++                </Link>
++              ) : (
++                <span className="inline-flex rounded-full border border-dashed border-border px-4 py-2 text-sm text-muted-foreground">
++                  Coming soon
++                </span>
++              )}
++            </div>
++          </li>
++        ))}
++      </ul>
++    </div>
++  );
++}
+diff --git a/website/src/components/ui/vertical-tabs.tsx b/website/src/components/ui/vertical-tabs.tsx
+index 8d70aa0..0c3ef41 100644
+--- a/website/src/components/ui/vertical-tabs.tsx
++++ b/website/src/components/ui/vertical-tabs.tsx
+@@ -13,6 +13,8 @@ export function VerticalTabs() {
+   const [activeIndex, setActiveIndex] = useState(0);
+   const [direction, setDirection] = useState(0);
+   const [isPaused, setIsPaused] = useState(false);
++  // once a visitor picks a row, stop rotating it out from under them
++  const [stopped, setStopped] = useState(false);
+ 
+   const handleNext = useCallback(() => {
+     setDirection(1);
+@@ -20,21 +22,21 @@ export function VerticalTabs() {
+   }, []);
+ 
+   const handleTabClick = (index: number) => {
++    setStopped(true);
+     if (index === activeIndex) return;
+     setDirection(index > activeIndex ? 1 : -1);
+     setActiveIndex(index);
+-    setIsPaused(false);
+   };
+ 
+   useEffect(() => {
+-    if (isPaused) return;
++    if (isPaused || stopped) return;
+ 
+     const interval = setInterval(() => {
+       handleNext();
+     }, AUTO_PLAY_DURATION);
+ 
+     return () => clearInterval(interval);
+-  }, [activeIndex, isPaused, handleNext]);
++  }, [activeIndex, isPaused, stopped, handleNext]);
+ 
+   const variants = {
+     enter: (direction: number) => ({
+@@ -95,11 +97,11 @@ export function VerticalTabs() {
+                     <div className="absolute left-[-16px] md:left-[-24px] top-0 bottom-0 w-[2px] bg-muted">
+                       {isActive && (
+                         <motion.div
+-                          key={`progress-${index}-${isPaused}`}
++                          key={`progress-${index}-${isPaused}-${stopped}`}
+                           className="absolute top-0 left-0 w-full bg-foreground origin-top"
+-                          initial={{ height: "0%" }}
++                          initial={{ height: stopped ? "100%" : "0%" }}
+                           animate={
+-                            isPaused ? { height: "0%" } : { height: "100%" }
++                            stopped ? { height: "100%" } : isPaused ? { height: "0%" } : { height: "100%" }
+                           }
+                           transition={{
+                             duration: AUTO_PLAY_DURATION / 1000,
+@@ -123,35 +125,21 @@ export function VerticalTabs() {
+                         {sensor.title}
+                       </span>
+ 
+-                      <AnimatePresence mode="wait">
+-                        {isActive && (
+-                          <motion.div
+-                            initial={{ opacity: 0, height: 0 }}
+-                            animate={{ opacity: 1, height: "auto" }}
+-                            exit={{ opacity: 0, height: 0 }}
+-                            transition={{
+-                              duration: 0.3,
+-                              ease: [0.23, 1, 0.32, 1],
+-                            }}
+-                            className="overflow-hidden"
+-                          >
+-                            {sensor.href ? (
+-                              <Link
+-                                href={sensor.href}
+-                                onClick={(e) => e.stopPropagation()}
+-                                className="inline-flex items-center gap-1.5 pb-2 text-sm font-medium text-foreground transition-colors hover:text-muted-foreground"
+-                              >
+-                                Explore the data
+-                                <ArrowRight className="h-3.5 w-3.5" />
+-                              </Link>
+-                            ) : (
+-                              <span className="inline-block pb-2 text-sm font-medium text-muted-foreground/60">
+-                                Data coming soon
+-                              </span>
+-                            )}
+-                          </motion.div>
+-                        )}
+-                      </AnimatePresence>
++                      {/* every row keeps its link visible, not just the active one */}
++                      {sensor.href ? (
++                        <Link
++                          href={sensor.href}
++                          onClick={(e) => e.stopPropagation()}
++                          className="inline-flex items-center gap-1.5 pb-2 text-sm font-medium text-foreground underline-offset-4 transition-colors hover:underline"
++                        >
++                          Explore the {sensor.title} data
++                          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
++                        </Link>
++                      ) : (
++                        <span className="inline-block pb-2 text-sm font-medium text-muted-foreground">
++                          Data coming soon
++                        </span>
++                      )}
+                     </div>
+                   </div>
+                 );
+diff --git a/website/src/lib/modalities.ts b/website/src/lib/modalities.ts
+index 1428467..3af71e2 100644
+--- a/website/src/lib/modalities.ts
++++ b/website/src/lib/modalities.ts
+@@ -7,6 +7,10 @@ export type Modality = {
+   title: string;
+   device: string;
+   summary: string;
++  /** one short line: what the signal measures, in everyday words */
++  measures: string;
++  /** what the published sample on the data page contains */
++  sample: string;
+   /** null until the modality has a data page */
+   href: string | null;
+ };
+@@ -18,6 +22,8 @@ export const MODALITIES: Modality[] = [
+     title: "Thermal",
+     device: "FLIR C5 · 160 × 120",
+     summary: "Per-pixel facial temperature. Stress and arousal show up as heat moving across the face — the nose tip cools, the inner eye corners warm, and every breath warms the skin under the nostrils.",
++    measures: "Skin temperature across the face, from a heat camera.",
++    sample: "12 s of thermal video, with temperatures tracked in four face regions.",
+     href: "/thermal",
+   },
+   {
+@@ -26,6 +32,8 @@ export const MODALITIES: Modality[] = [
+     title: "ECG",
+     device: "Frontier X2 · single lead · 125 Hz",
+     summary: "The heart's electrical trace, beat by beat. Heart rate and its variability track the balance between the stress and rest branches of the nervous system.",
++    measures: "The heart’s electrical signal, beat by beat, from a chest sensor.",
++    sample: "5 min of a driver’s ECG, at rest then in city traffic, with breathing and sweat.",
+     href: "/ecg",
+   },
+   {
+@@ -34,6 +42,8 @@ export const MODALITIES: Modality[] = [
+     title: "EMG",
+     device: "Surface EMG array",
+     summary: "Surface muscle activity from facial and forearm electrodes — the involuntary micro-contractions that accompany expressions too brief to see on camera.",
++    measures: "Tiny muscle movements in the face and forearm, from skin electrodes.",
++    sample: "Sample data coming soon.",
+     href: null,
+   },
+   {
+@@ -42,6 +52,8 @@ export const MODALITIES: Modality[] = [
+     title: "rPPG",
+     device: "RGB camera",
+     summary: "Contactless pulse recovered from subtle skin-colour changes in ordinary video, checked against the ECG recorded in the same session.",
++    measures: "Your pulse from an ordinary camera, with nothing touching the skin.",
++    sample: "75 s of face colour turned into a pulse, checked against a fingertip sensor.",
+     href: "/rppg",
+   },
+ ];

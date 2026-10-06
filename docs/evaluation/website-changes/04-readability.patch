@@ -1,0 +1,442 @@
+diff --git a/website/src/app/globals.css b/website/src/app/globals.css
+index ddafb08..fb8dd94 100644
+--- a/website/src/app/globals.css
++++ b/website/src/app/globals.css
+@@ -63,7 +63,7 @@
+   --secondary: oklch(0.97 0 0);
+   --secondary-foreground: oklch(0.205 0 0);
+   --muted: oklch(0.97 0 0);
+-  --muted-foreground: oklch(0.556 0 0);
++  --muted-foreground: oklch(0.47 0 0);
+   --accent: oklch(0.97 0 0);
+   --accent-foreground: oklch(0.205 0 0);
+   --destructive: oklch(0.577 0.245 27.325);
+@@ -100,7 +100,7 @@
+   --secondary: oklch(0.269 0 0);
+   --secondary-foreground: oklch(0.985 0 0);
+   --muted: oklch(0.269 0 0);
+-  --muted-foreground: oklch(0.708 0 0);
++  --muted-foreground: oklch(0.76 0 0);
+   --accent: oklch(0.269 0 0);
+   --accent-foreground: oklch(0.985 0 0);
+   --destructive: oklch(0.704 0.191 22.216);
+@@ -129,8 +129,8 @@
+   --pv-task-border: rgba(0, 0, 0, 0.12);
+   --pv-text-1: rgba(0, 0, 0, 0.85);
+   --pv-text-2: rgba(0, 0, 0, 0.65);
+-  --pv-text-3: rgba(0, 0, 0, 0.4);
+-  --pv-text-4: rgba(0, 0, 0, 0.3);
++  --pv-text-3: rgba(0, 0, 0, 0.62);
++  --pv-text-4: rgba(0, 0, 0, 0.58);
+   --pv-fusion-bg: #eaf1ff;
+   --pv-fusion-text: rgba(0, 0, 0, 0.88);
+ }
+@@ -142,8 +142,8 @@
+   --pv-task-border: rgba(255, 255, 255, 0.07);
+   --pv-text-1: rgba(255, 255, 255, 0.82);
+   --pv-text-2: rgba(255, 255, 255, 0.62);
+-  --pv-text-3: rgba(255, 255, 255, 0.28);
+-  --pv-text-4: rgba(255, 255, 255, 0.18);
++  --pv-text-3: rgba(255, 255, 255, 0.6);
++  --pv-text-4: rgba(255, 255, 255, 0.55);
+   --pv-fusion-bg: #050d1c;
+   --pv-fusion-text: #ffffff;
+ }
+@@ -155,7 +155,7 @@
+ .viz {
+   --viz-grid: #e1e0d9;
+   --viz-axis: #c3c2b7;
+-  --viz-muted: #898781;
++  --viz-muted: #67655f;
+   --viz-text: #0b0b0b;
+   --viz-text-2: #52514e;
+   --viz-band: rgba(11, 11, 11, 0.03);
+@@ -172,7 +172,7 @@
+ .dark .viz {
+   --viz-grid: #2c2c2a;
+   --viz-axis: #383835;
+-  --viz-muted: #898781;
++  --viz-muted: #a6a49c;
+   --viz-text: #ffffff;
+   --viz-text-2: #c3c2b7;
+   --viz-band: rgba(255, 255, 255, 0.05);
+diff --git a/website/src/components/modality/ecg-explorer.tsx b/website/src/components/modality/ecg-explorer.tsx
+index b1ac062..a310025 100644
+--- a/website/src/components/modality/ecg-explorer.tsx
++++ b/website/src/components/modality/ecg-explorer.tsx
+@@ -93,7 +93,7 @@ function Dashboard({ session }: { session: EcgSession }) {
+             title="This excerpt"
+             note="click to move the window · quality every 5 s"
+             actions={
+-              <div className="flex shrink-0 gap-2.5 text-[11px]">
++              <div className="flex shrink-0 gap-2.5 text-xs">
+                 <StatusBadge status="good" label="Clean" />
+                 <StatusBadge status="warning" label="Irregular" />
+                 <StatusBadge status="critical" label="Artefact" />
+@@ -250,9 +250,9 @@ function TracePair({ session, start }: { session: EcgSession; start: number }) {
+   const each = Math.max(90, Math.floor((size.height - 40) / 2));
+   return (
+     <div ref={ref} className="absolute inset-0 flex flex-col gap-1">
+-      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Raw</p>
++      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Raw</p>
+       <EcgStrip session={session} start={start} trace="raw" width={size.width} height={each} />
+-      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Cleaned · beats</p>
++      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Cleaned · beats</p>
+       <EcgStrip session={session} start={start} trace="filtered" width={size.width} height={each} />
+     </div>
+   );
+@@ -416,7 +416,7 @@ function Overview({ session, start, onPick }: { session: EcgSession; start: numb
+           {session.events.map((e) => (
+             <g key={e.t}>
+               <line x1={x(e.t)} x2={x(e.t)} y1={margin.top} y2={height - margin.bottom} stroke="var(--viz-text)" strokeWidth={1} />
+-              <text x={x(e.t) + 4} y={margin.top - 3} fontSize={10} fill="var(--viz-text-2)">
++              <text x={x(e.t) + 4} y={margin.top - 3} fontSize={12} fill="var(--viz-text-2)">
+                 {e.kind}
+               </text>
+             </g>
+@@ -432,10 +432,10 @@ function Overview({ session, start, onPick }: { session: EcgSession; start: numb
+               fill={STATUS_COLOR[w.status]}
+             />
+           ))}
+-          <text x={x(0)} y={stripY + 22} fontSize={10.5} fill="var(--viz-muted)">
++          <text x={x(0)} y={stripY + 22} fontSize={12} fill="var(--viz-muted)">
+             0 s
+           </text>
+-          <text x={x(session.durationS)} y={stripY + 22} textAnchor="end" fontSize={10.5} fill="var(--viz-muted)">
++          <text x={x(session.durationS)} y={stripY + 22} textAnchor="end" fontSize={12} fill="var(--viz-muted)">
+             {session.durationS} s
+           </text>
+         </ChartFrame>
+diff --git a/website/src/components/modality/kit.tsx b/website/src/components/modality/kit.tsx
+index f37c58b..2f0166a 100644
+--- a/website/src/components/modality/kit.tsx
++++ b/website/src/components/modality/kit.tsx
+@@ -46,7 +46,7 @@ export function ModalityHeader({
+           ) : (
+             <span
+               key={x.key}
+-              className="cursor-default rounded-full border border-dashed border-border px-3.5 py-1.5 text-sm text-muted-foreground/60"
++              className="cursor-default rounded-full border border-dashed border-border px-3.5 py-1.5 text-sm text-muted-foreground"
+             >
+               {x.title} · soon
+             </span>
+diff --git a/website/src/components/modality/rppg-explorer.tsx b/website/src/components/modality/rppg-explorer.tsx
+index 97b1f91..f38340d 100644
+--- a/website/src/components/modality/rppg-explorer.tsx
++++ b/website/src/components/modality/rppg-explorer.tsx
+@@ -109,7 +109,7 @@ function Dashboard({ session }: { session: RppgSession }) {
+             title="This recording"
+             note="click to move the window · quality every 5 s"
+             actions={
+-              <div className="flex shrink-0 gap-2.5 text-[11px]">
++              <div className="flex shrink-0 gap-2.5 text-xs">
+                 <StatusBadge status="good" label="Good" />
+                 <StatusBadge status="warning" label="Fair" />
+                 <StatusBadge status="critical" label="Weak" />
+@@ -265,9 +265,9 @@ function PulsePair({ session, start, method }: { session: RppgSession; start: nu
+   const each = Math.max(90, Math.floor((size.height - 40) / 2));
+   return (
+     <div ref={ref} className="absolute inset-0 flex flex-col gap-1">
+-      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Green channel · face average</p>
++      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Green channel · face average</p>
+       <GreenStrip session={session} start={start} width={size.width} height={each} />
+-      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
++      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+         Pulse{session.reference ? " · dashed = fingertip oximeter" : ""}
+       </p>
+       <PulseStrip session={session} start={start} method={method} width={size.width} height={each} />
+@@ -460,10 +460,10 @@ function Overview({
+               fill={STATUS_COLOR[q.status]}
+             />
+           ))}
+-          <text x={x(0)} y={stripY + 22} fontSize={10.5} fill="var(--viz-muted)">
++          <text x={x(0)} y={stripY + 22} fontSize={12} fill="var(--viz-muted)">
+             0 s
+           </text>
+-          <text x={x(session.durationS)} y={stripY + 22} textAnchor="end" fontSize={10.5} fill="var(--viz-muted)">
++          <text x={x(session.durationS)} y={stripY + 22} textAnchor="end" fontSize={12} fill="var(--viz-muted)">
+             {Math.round(session.durationS)} s
+           </text>
+         </ChartFrame>
+@@ -596,7 +596,7 @@ function MethodTable({ session, method, onPick }: { session: RppgSession; method
+                   >
+                     {METHOD_LABEL[m]}
+                   </button>
+-                  {m === best && <span className="ml-1.5 text-[11px] text-muted-foreground">· cleanest</span>}
++                  {m === best && <span className="ml-1.5 text-xs text-muted-foreground">· cleanest</span>}
+                   <span className="block text-xs text-muted-foreground">{METHOD_HOW[m]}</span>
+                 </td>
+                 <td className="py-2 pr-3 text-right tabular-nums">{fmt(s.hrBpm, 1)} bpm</td>
+@@ -775,7 +775,7 @@ function Spectrum({ session, refHr }: { session: RppgSession; refHr?: number })
+         {refHr !== undefined && (
+           <g>
+             <line x1={x(refHr)} x2={x(refHr)} y1={y.range[1]} y2={y.range[0]} stroke="var(--viz-text-2)" strokeWidth={1.2} strokeDasharray="4 3" />
+-            <text x={x(refHr) + 4} y={margin.top - 3} fontSize={10} fill="var(--viz-text-2)">
++            <text x={x(refHr) + 4} y={margin.top - 3} fontSize={12} fill="var(--viz-text-2)">
+               oximeter
+             </text>
+           </g>
+diff --git a/website/src/components/modality/thermal-explorer.tsx b/website/src/components/modality/thermal-explorer.tsx
+index a7d2503..c98aa32 100644
+--- a/website/src/components/modality/thermal-explorer.tsx
++++ b/website/src/components/modality/thermal-explorer.tsx
+@@ -410,7 +410,7 @@ function ThermalCanvas({
+           </div>
+         )}
+       </div>
+-      <div className="mt-2 flex items-center gap-2 text-[11px] tabular-nums text-muted-foreground" style={{ width: dw }}>
++      <div className="mt-2 flex items-center gap-2 text-xs tabular-nums text-muted-foreground" style={{ width: dw }}>
+         <span>{DISPLAY_RANGE[0]}°</span>
+         <div className="h-1.5 flex-1 rounded-full" style={{ background: gradientCss(cmap) }} aria-hidden="true" />
+         <span>{DISPLAY_RANGE[1]}°C</span>
+@@ -479,7 +479,7 @@ function Histogram({ frame, toC }: { frame: Uint8Array | null; toC: (b: number)
+           {bins[hover].from.toFixed(1)}–{(bins[hover].from + STEP).toFixed(1)}° · {bins[hover].pct.toFixed(1)}% of pixels
+         </p>
+       )}
+-      <p className="pointer-events-none absolute left-0 top-0 flex gap-3 text-[11px] text-muted-foreground">
++      <p className="pointer-events-none absolute left-0 top-0 flex gap-3 text-xs text-muted-foreground">
+         <span className="inline-flex items-center gap-1">
+           <span className="h-2 w-2 rounded-sm" style={{ background: "var(--viz-muted)" }} /> room
+         </span>
+@@ -560,7 +560,7 @@ function RoiChart({
+             <path key={l.key} d={linePath(times, l.values, x, y)} fill="none" stroke={ROI_COLOR[l.key]} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+           ))}
+           {ends.map((e) => (
+-            <text key={e.key} x={x.range[1] + 6} y={e.y} dy="0.32em" fontSize={10.5} fill="var(--viz-text-2)">
++            <text key={e.key} x={x.range[1] + 6} y={e.y} dy="0.32em" fontSize={12} fill="var(--viz-text-2)">
+               {e.label}
+             </text>
+           ))}
+@@ -633,13 +633,13 @@ function RangeSummary({ session }: { session: ThermalSession }) {
+                   <line x1={x(r.min)} x2={x(r.max)} y1={cy} y2={cy} stroke={ROI_COLOR[r.key]} strokeWidth={8} strokeLinecap="round" opacity={0.35} />
+                   <circle cx={x(r.mean)} cy={cy} r={6} fill={ROI_COLOR[r.key]} stroke="var(--card)" strokeWidth={2} />
+                   {!narrow && (
+-                    <text x={width - margin.right + 12} y={cy} dy="0.32em" fontSize={11} fill="var(--viz-text-2)" className="tabular-nums">
++                    <text x={width - margin.right + 12} y={cy} dy="0.32em" fontSize={12} fill="var(--viz-text-2)" className="tabular-nums">
+                       {r.mean.toFixed(2)}° ({r.min.toFixed(1)}–{r.max.toFixed(1)})
+                     </text>
+                   )}
+                 </>
+               ) : (
+-                <text x={margin.left} y={cy} dy="0.32em" fontSize={11} fill="var(--viz-muted)">
++                <text x={margin.left} y={cy} dy="0.32em" fontSize={12} fill="var(--viz-muted)">
+                   hidden by glasses
+                 </text>
+               )}
+diff --git a/website/src/components/modality/widget.tsx b/website/src/components/modality/widget.tsx
+index e8dd2d0..b486f52 100644
+--- a/website/src/components/modality/widget.tsx
++++ b/website/src/components/modality/widget.tsx
+@@ -29,7 +29,7 @@ export function WidgetShell({
+       <div className="mb-2 flex items-start justify-between gap-2">
+         <div className="min-w-0">
+           <h3 className="flex items-center gap-1 truncate text-sm font-semibold">
+-            <GripVertical className="-ml-1 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
++            <GripVertical className="-ml-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+             {title}
+           </h3>
+           {note && <p className="truncate text-xs text-muted-foreground">{note}</p>}
+diff --git a/website/src/components/site-nav.tsx b/website/src/components/site-nav.tsx
+index fdf3709..57df80d 100644
+--- a/website/src/components/site-nav.tsx
++++ b/website/src/components/site-nav.tsx
+@@ -190,7 +190,7 @@ export function SiteNav() {
+                           ) : (
+                             <span
+                               key={m.key}
+-                              className="flex items-center gap-2 text-muted-foreground/50"
++                              className="flex items-center gap-2 text-muted-foreground"
+                             >
+                               {m.title}
+                               <span className="text-xs">Soon</span>
+diff --git a/website/src/components/ui/applications.tsx b/website/src/components/ui/applications.tsx
+index 0ac3371..07475a1 100644
+--- a/website/src/components/ui/applications.tsx
++++ b/website/src/components/ui/applications.tsx
+@@ -36,7 +36,7 @@ export function Applications() {
+                 <app.icon className="h-5 w-5 text-foreground" />
+               </span>
+               <div>
+-                <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
++                <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                   {app.kind}
+                 </p>
+                 <h3 className="text-lg font-medium tracking-tight text-foreground">
+@@ -55,7 +55,7 @@ export function Applications() {
+             {app.feeds.map((f) => (
+               <span
+                 key={f}
+-                className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground"
++                className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground"
+               >
+                 {f}
+               </span>
+diff --git a/website/src/components/ui/pipeline-visualization.tsx b/website/src/components/ui/pipeline-visualization.tsx
+index 546c5f0..463ba52 100644
+--- a/website/src/components/ui/pipeline-visualization.tsx
++++ b/website/src/components/ui/pipeline-visualization.tsx
+@@ -190,11 +190,11 @@ export default function MultimodalPipeline() {
+             animate={{ opacity: [1, 0.2, 1] }}
+             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+           />
+-          <span className="text-[11px] text-black/45 dark:text-white/30 tracking-[0.1em] font-mono">
++          <span className="text-xs text-black/65 dark:text-white/60 tracking-[0.1em] font-mono">
+             MULTIMODAL PIPELINE · LIVE
+           </span>
+         </div>
+-        <span className="text-[11px] text-black/35 dark:text-white/[0.18] font-mono">
++        <span className="text-xs text-black/60 dark:text-white/55 font-mono">
+           4 modalities · 6 tasks
+         </span>
+       </div>
+@@ -204,7 +204,7 @@ export default function MultimodalPipeline() {
+         <span className="text-[26px] leading-none text-black/85 dark:text-white/[0.85] font-mono tabular-nums">
+           {subjectCount}
+         </span>
+-        <span className="text-[11px] text-black/45 dark:text-white/30 tracking-[0.09em] font-mono">
++        <span className="text-xs text-black/65 dark:text-white/60 tracking-[0.09em] font-mono">
+           SUBJECTS RECORDED
+         </span>
+       </div>
+@@ -307,7 +307,7 @@ export default function MultimodalPipeline() {
+               x={14 + SENSOR_W / 2}
+               y={sensor.y + 14}
+               textAnchor="middle"
+-              fontSize="9.5"
++              fontSize="11"
+               fill="var(--pv-text-3)"
+               fontFamily="system-ui"
+               letterSpacing=".07em"
+@@ -342,7 +342,7 @@ export default function MultimodalPipeline() {
+           x={preLeft + 59}
+           y="100"
+           textAnchor="middle"
+-          fontSize="10.5"
++          fontSize="11.5"
+           fill="var(--pv-text-3)"
+           fontFamily="system-ui"
+           letterSpacing=".07em"
+@@ -363,7 +363,7 @@ export default function MultimodalPipeline() {
+           x={preLeft + 59}
+           y="151"
+           textAnchor="middle"
+-          fontSize="9.5"
++          fontSize="11"
+           fill="var(--pv-text-4)"
+           fontFamily="monospace"
+         >
+@@ -386,7 +386,7 @@ export default function MultimodalPipeline() {
+           x={fusionLeft + 65}
+           y="98"
+           textAnchor="middle"
+-          fontSize="10.5"
++          fontSize="11.5"
+           fill="rgba(51,117,255,0.65)"
+           fontFamily="system-ui"
+           letterSpacing=".07em"
+@@ -422,8 +422,8 @@ export default function MultimodalPipeline() {
+           x={fusionLeft + 65}
+           y="173"
+           textAnchor="middle"
+-          fontSize="9.5"
+-          fill="rgba(0,82,255,0.4)"
++          fontSize="11"
++          fill="rgba(0,82,255,0.75)"
+           fontFamily="monospace"
+         >
+           trained on synced sessions
+@@ -478,7 +478,7 @@ export default function MultimodalPipeline() {
+                 animate={{ opacity: 1, y: 0 }}
+                 exit={{ opacity: 0, y: -5 }}
+                 transition={{ duration: 0.25 }}
+-                className="font-mono text-[12px] text-black/55 dark:text-white/[0.42] leading-[1.55] absolute inset-0"
++                className="font-mono text-[12px] text-black/65 dark:text-white/60 leading-[1.55] absolute inset-0"
+               >
+                 {messages[messageIndex]}
+               </motion.div>
+diff --git a/website/src/components/ui/task-bento.tsx b/website/src/components/ui/task-bento.tsx
+index 3f77f7f..7eb2bba 100644
+--- a/website/src/components/ui/task-bento.tsx
++++ b/website/src/components/ui/task-bento.tsx
+@@ -144,7 +144,7 @@ function TaskCard({
+               style={{ transform: "rotateY(180deg)" }}
+             >
+               <div className="flex shrink-0 items-start justify-between gap-3">
+-                <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
++                <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                   {task.title}
+                 </span>
+                 <CornerDownLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
+diff --git a/website/src/components/ui/vertical-tabs.tsx b/website/src/components/ui/vertical-tabs.tsx
+index 0c3ef41..2f2986f 100644
+--- a/website/src/components/ui/vertical-tabs.tsx
++++ b/website/src/components/ui/vertical-tabs.tsx
+@@ -67,7 +67,7 @@ export function VerticalTabs() {
+               <h2 className="tracking-tighter text-balance text-3xl font-medium md:text-4xl lg:text-5xl text-foreground">
+                 Modalities
+               </h2>
+-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-[0.3em] block ml-0.5">
++              <span className="text-xs font-medium text-muted-foreground uppercase tracking-[0.3em] block ml-0.5">
+                 (DATA)
+               </span>
+             </div>
+@@ -91,7 +91,7 @@ export function VerticalTabs() {
+                       "group relative flex cursor-pointer items-start gap-4 py-6 md:py-8 text-left outline-none transition-all duration-500 border-t border-border/50 first:border-0 focus-visible:ring-2 focus-visible:ring-ring/50",
+                       isActive
+                         ? "text-foreground"
+-                        : "text-muted-foreground/60 hover:text-foreground"
++                        : "text-muted-foreground hover:text-foreground"
+                     )}
+                   >
+                     <div className="absolute left-[-16px] md:left-[-24px] top-0 bottom-0 w-[2px] bg-muted">
+@@ -111,7 +111,7 @@ export function VerticalTabs() {
+                       )}
+                     </div>
+ 
+-                    <span className="text-[9px] md:text-[10px] font-medium mt-1 tabular-nums opacity-50">
++                    <span className="text-xs font-medium mt-1 tabular-nums text-muted-foreground">
+                       /{sensor.id}
+                     </span>
+ 
+diff --git a/website/src/components/viz/chart.tsx b/website/src/components/viz/chart.tsx
+index 1a3b7db..067e7a6 100644
+--- a/website/src/components/viz/chart.tsx
++++ b/website/src/components/viz/chart.tsx
+@@ -160,7 +160,7 @@ export function ChartFrame({
+             x={(x(b.from) + x(b.to)) / 2}
+             y={y0 - 6}
+             textAnchor="middle"
+-            fontSize={10}
++            fontSize={12}
+             fill="var(--viz-muted)"
+             letterSpacing="0.06em"
+           >
+@@ -172,24 +172,24 @@ export function ChartFrame({
+       {yTicks.map((t) => (
+         <g key={`y${t}`}>
+           <line x1={x0} x2={x1} y1={y(t)} y2={y(t)} stroke="var(--viz-grid)" strokeWidth={1} />
+-          <text x={x0 - 8} y={y(t)} dy="0.32em" textAnchor="end" fontSize={10.5} fill="var(--viz-muted)" className="tabular-nums">
++          <text x={x0 - 8} y={y(t)} dy="0.32em" textAnchor="end" fontSize={12} fill="var(--viz-muted)" className="tabular-nums">
+             {yFormat(t)}
+           </text>
+         </g>
+       ))}
+       <line x1={x0} x2={x1} y1={y1} y2={y1} stroke="var(--viz-axis)" strokeWidth={1} />
+       {xTicks.map((t) => (
+-        <text key={`x${t}`} x={x(t)} y={y1 + 16} textAnchor="middle" fontSize={10.5} fill="var(--viz-muted)" className="tabular-nums">
++        <text key={`x${t}`} x={x(t)} y={y1 + 16} textAnchor="middle" fontSize={12} fill="var(--viz-muted)" className="tabular-nums">
+           {xFormat(t)}
+         </text>
+       ))}
+       {yLabel && (
+-        <text x={x0 - 8} y={y0 - 6} textAnchor="end" fontSize={10} fill="var(--viz-muted)">
++        <text x={x0 - 8} y={y0 - 6} textAnchor="end" fontSize={12} fill="var(--viz-muted)">
+           {yLabel}
+         </text>
+       )}
+       {xLabel && (
+-        <text x={x1} y={y1 + 30} textAnchor="end" fontSize={10} fill="var(--viz-muted)">
++        <text x={x1} y={y1 + 30} textAnchor="end" fontSize={12} fill="var(--viz-muted)">
+           {xLabel}
+         </text>
+       )}
