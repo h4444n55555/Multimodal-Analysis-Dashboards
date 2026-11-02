@@ -1,5 +1,7 @@
 # MMAC Study Hub
 
+### 🌐 Live website: **https://multimodal-analysis-dashboards.vercel.app/**
+
 The public website for the **Multimodal Affective Computing (MMAC) study** at
 IIT Ropar. The study looks at how brief, involuntary facial and body signals
 relate to emotional and cognitive state, and records several signals together:
@@ -282,6 +284,8 @@ Details for each sensor are in `ECG/README.md`, `SpO2/README.md` and
 `Thermal/README.md`.
 
 ## Deployment
+
+Live at **https://multimodal-analysis-dashboards.vercel.app/**.
 
 The site lives in the `website/` folder, so when importing the repository into
 Vercel set **Root Directory** to `website`. No other settings or environment
