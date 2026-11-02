@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+*.log
+.claude/
+sessions/*
+!sessions/.gitkeep
+_realtest*/
+_fingerout/

@@ -11,9 +11,12 @@ relate to emotional and cognitive state, and records several signals together:
 | **EMG** | Small muscle movements, from electrodes on the skin |
 | **rPPG** | The pulse, from an ordinary camera, with nothing touching the skin |
 
-The Study Hub is where people who want the study’s data can **preview it**: what
+The repository has two parts. The **Study Hub website** (`website/`) is where
+people who want the study’s data can **preview it**: what
 each signal looks like, what a recording contains and how clean it is. Access to
-the full dataset is by request, under a data use agreement.
+the full dataset is by request, under a data use agreement. The **capture
+dashboards** (`ECG/`, `SpO2/`, `Thermal/`) are the tools that recorded the data.
+They are no longer linked from the site.
 
 This repository is a supplement to our main project,
 [**Aura Screen**](https://github.com/hima1323/health-screening), a contactless
@@ -68,24 +71,45 @@ study’s own recordings are released, the pages show samples from open datasets
 PhysioNet *drivedb* (ECG), PhysioNet *GRABMyo* (EMG) and a public-domain thermal
 video from Wikimedia Commons.
 
-## How the data was collected
+## Workflow
 
-The data was recorded with consumer-grade sensors, using capture dashboards that
-we built and have since handed over. They are not part of this repository.
+```mermaid
+flowchart LR
+    subgraph S["Sensors"]
+        A["Frontier X2 ECG strap"]
+        B["FLIR C5 thermal camera"]
+        C["Contec CMS50E oximeter"]
+        D["Camera (rPPG)"]
+    end
+    subgraph T["Capture dashboards (Streamlit)"]
+        E["ECG :8502"]
+        F["Thermal :8501"]
+        G["SpO2 :8503"]
+    end
+    H[("Per-subject sessions<br/>CSV / JSONL / metrics JSON")]
+    I["Sample-data scripts<br/>website/scripts"]
+    J["Study Hub website<br/>Next.js on Vercel"]
+    K["Researcher"]
+    L["Access request form +<br/>data use agreement"]
+    M["Fingerprinted copy<br/>(proposal)"]
+    A --> E
+    B --> F
+    C --> G
+    D --> H
+    E --> H
+    F --> H
+    G --> H
+    H --> I
+    O[("Open datasets<br/>PhysioNet, Wikimedia")] --> I
+    I -->|static JSON| J
+    J -->|preview| K
+    K --> L
+    L -->|approved| M
+    M --> K
+```
 
-- **ECG, Frontier X2 chest strap.** The raw ECG sits behind an app subscription,
-  and the only free export is a PDF. The strap’s live-stream share link sends
-  waveform packets over a WebSocket, so we captured those directly: 125 Hz, with
-  duplicate and out-of-order packets dropped and gaps counted. Beats are found
-  with a Pan-Tompkins detector. A synthetic ECG with known beats gave 216 of 216
-  found, and a real 150 s capture gave 56.4 to 91.5 bpm against the strap’s own
-  55 to 90.
-- **Thermal, FLIR C5.** The camera cannot record temperature video, and raw
-  radiometric video would have meant jailbreaking it. Radiometric data is
-  embedded in its still JPEGs, so we extract a per-pixel temperature array and
-  metadata from each photo, and record ordinary thermal video alongside.
-- **EMG and rPPG.** Recorded alongside the other signals; the site shows
-  open-dataset samples for EMG until the study’s own recordings are released.
+The website shows static sample data only, with no database or server-side
+secrets.
 
 ## Screens
 
@@ -107,11 +131,7 @@ The website, in the order a visitor meets it.
 |:-:|:-:|
 | <img src="assets/screens/04-rppg-dashboard-after.png" width="380"> | <img src="assets/screens/09-thermal-video-after.png" width="380"> |
 
-### 3. Research pipeline
-
-<img src="assets/screens/r1-04-pipeline-diagram-after.png" alt="Research pipeline diagram" width="640">
-
-### 4. Controlled access to the data
+### 3. Controlled access to the data
 
 | Request form | Agreement step | Data use agreement |
 |:-:|:-:|:-:|
@@ -173,16 +193,38 @@ far tail and the Monte-Carlo value is the one to report.
 
 ```
 .
-├── website/           Next.js Study Hub
+├── website/           Next.js Study Hub (see website/README.md)
 │   ├── src/           app routes (thermal, ecg, emg, rppg, data-agreement), components
 │   ├── public/data/   static sample data the pages read
 │   └── scripts/       Python scripts that build the sample data from open datasets
+├── ECG/               Frontier X2 capture + Streamlit dashboard
+├── Thermal/           FLIR C5 extraction + Streamlit dashboard
+├── SpO2/              Contec CMS50E capture + Streamlit dashboard
 ├── health-screening/  Aura Screen patient app (also at hima1323/health-screening)
 ├── assets/            images used in this README
 └── Documentation.md   initial project documentation
 ```
 
-## Run it
+## Setup and execution
+
+### Prerequisites
+
+| Needed for | Requirement |
+|---|---|
+| Website | Node.js 20.9 or newer, and npm |
+| Dashboards and data scripts | Python 3.10 or newer, and pip |
+| Thermal sample-data script only | `ffmpeg` on your `PATH` |
+| SpO2 dashboard only | Silicon Labs CP210x USB driver, and the CMS50E plugged in |
+
+Commands below are for Windows PowerShell. On macOS or Linux, use
+`python3` and `source .venv/bin/activate` instead of `.\.venv\Scripts\activate`.
+
+```bash
+git clone https://github.com/h4444n55555/Multimodal-Analysis-Dashboards.git
+cd Multimodal-Analysis-Dashboards
+```
+
+### 1. Run the website
 
 ```bash
 cd website
@@ -190,15 +232,85 @@ npm install
 npm run dev        # http://localhost:3000
 ```
 
-Needs Node 20.9 or newer. `npm run build` makes the production build that Vercel
-runs. See [website/README.md](website/README.md) for the sample data.
+Open http://localhost:3000. The pages are `/`, `/thermal`, `/ecg`, `/emg`,
+`/rppg` and `/data-agreement`. To check the production build, which is what
+Vercel runs:
+
+```bash
+npm run lint
+npm run build
+npm start          # http://localhost:3000
+```
+
+The site needs no environment variables. Optionally set
+`NEXT_PUBLIC_HEALTH_SCREENING_URL` to where Aura Screen is hosted (default
+`http://localhost:5174`).
+
+### 2. Regenerate the website’s sample data (optional)
+
+The pages read ready-made files from `website/public/data/`, so you only need
+this to rebuild them. Run from the `website/` folder, with the originals in
+`website/scripts/sources/`:
+
+```bash
+pip install numpy scipy pandas
+python scripts/ecg/make_showcase.py       # ECG, uses ../ECG/ecg_analysis.py
+python scripts/emg/make_showcase.py       # EMG
+python scripts/thermal/make_showcase.py   # thermal (needs ffmpeg)
+python scripts/rppg/make_showcase.py      # rPPG (needs the cvpr-lab folder, not in this repo)
+```
+
+See [website/scripts/README.md](website/scripts/README.md) for where each sample
+comes from and its licence.
+
+### 3. Run a capture dashboard
+
+Each dashboard is a Streamlit app with its own `requirements.txt`. Use a
+separate virtual environment per folder. The example is ECG; do the same in
+`Thermal/` or `SpO2/`.
+
+```powershell
+cd ECG
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run dashboard.py
+```
+
+| Dashboard | Folder | URL | What you need |
+|---|---|---|---|
+| ECG | `ECG/` | http://localhost:8502 | A Frontier X2 live-stream share link, or a `.csv` / `.jsonl` captured earlier (`sample_session.csv` is included to try it) |
+| Thermal | `Thermal/` | http://localhost:8501 | FLIR C5 radiometric `.jpg` files, dropped into the dashboard or into `Thermal/images/` |
+| SpO2 | `SpO2/` | http://localhost:8503 | A CMS50E on a free COM port (close SpO2 Assistant first) |
+
+They use different ports, so all three can run at once during a session.
+
+### 4. Capture without a dashboard (command line)
+
+```powershell
+# ECG: record 10 minutes from a share link, no browser needed
+cd ECG
+python stream_capture.py 6005748 -d 600 -o morning_session
+
+# SpO2: list ports, record live, check the decoders without a device
+cd ..\SpO2
+python stream_capture.py ports
+python stream_capture.py live -d 600 -o morning
+python stream_capture.py selftest
+
+# Thermal: extract temperatures from FLIR photos in images/ into output/
+cd ..\Thermal
+python extract_metadata.py --input images --output output
+```
+
+Details for each sensor are in `ECG/README.md`, `SpO2/README.md` and
+`Thermal/README.md`.
 
 ## Deployment
 
 The site lives in the `website/` folder, so when importing the repository into
 Vercel set **Root Directory** to `website`. No other settings or environment
-variables are needed. Optionally set `NEXT_PUBLIC_HEALTH_SCREENING_URL` to where
-Aura Screen is hosted.
+variables are needed.
 
 ## Version control
 

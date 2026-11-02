@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+*.log
+output/*
+!output/.gitkeep
+images/*
+!images/.gitkeep
+videos/*
+!videos/.gitkeep
+archives/*
+!archives/.gitkeep
+skipped/*
+!skipped/.gitkeep
+Photo Storage(Not For Processing)/
+New folder/
