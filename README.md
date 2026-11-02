@@ -232,7 +232,7 @@ this to rebuild them. Run from the `website/` folder, with the originals in
 
 ```bash
 python -m venv .venv
-.\.venv\Scriptsctivate        # macOS/Linux: source .venv/bin/activate
+.\.venv\Scripts\activate        # macOS/Linux: source .venv/bin/activate
 pip install numpy scipy pandas
 python scripts/ecg/make_showcase.py       # ECG, uses ../ECG/ecg_analysis.py
 python scripts/emg/make_showcase.py       # EMG
