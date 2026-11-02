@@ -231,12 +231,17 @@ this to rebuild them. Run from the `website/` folder, with the originals in
 `website/scripts/sources/`:
 
 ```bash
+python -m venv .venv
+.\.venv\Scriptsctivate        # macOS/Linux: source .venv/bin/activate
 pip install numpy scipy pandas
 python scripts/ecg/make_showcase.py       # ECG, uses ../ECG/ecg_analysis.py
 python scripts/emg/make_showcase.py       # EMG
-python scripts/thermal/make_showcase.py   # thermal (needs ffmpeg)
-python scripts/rppg/make_showcase.py      # rPPG (needs the cvpr-lab folder, not in this repo)
+python scripts/thermal/make_showcase.py   # thermal, needs ffmpeg on your PATH
 ```
+
+The rPPG sample (`scripts/rppg/make_showcase.py`) is not in this list. It needs
+the `cvpr-lab/` pipeline, which is not part of this repository, so the rPPG data
+already in `website/public/data/rppg/` is used as it is.
 
 See [website/scripts/README.md](website/scripts/README.md) for where each sample
 comes from and its licence.
