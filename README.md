@@ -73,43 +73,18 @@ video from Wikimedia Commons.
 
 ## Workflow
 
-```mermaid
-flowchart LR
-    subgraph S["Sensors"]
-        A["Frontier X2 ECG strap"]
-        B["FLIR C5 thermal camera"]
-        C["Contec CMS50E oximeter"]
-        D["Camera (rPPG)"]
-    end
-    subgraph T["Capture dashboards (Streamlit)"]
-        E["ECG :8502"]
-        F["Thermal :8501"]
-        G["SpO2 :8503"]
-    end
-    H[("Per-subject sessions<br/>CSV / JSONL / metrics JSON")]
-    I["Sample-data scripts<br/>website/scripts"]
-    J["Study Hub website<br/>Next.js on Vercel"]
-    K["Researcher"]
-    L["Access request form +<br/>data use agreement"]
-    M["Fingerprinted copy<br/>(proposal)"]
-    A --> E
-    B --> F
-    C --> G
-    D --> H
-    E --> H
-    F --> H
-    G --> H
-    H --> I
-    O[("Open datasets<br/>PhysioNet, Wikimedia")] --> I
-    I -->|static JSON| J
-    J -->|preview| K
-    K --> L
-    L -->|approved| M
-    M --> K
-```
+### Architecture
 
-The website shows static sample data only, with no database or server-side
-secrets.
+<img src="assets/diagrams/architecture.png" alt="Architecture: sensors, capture dashboards, sessions, sample-data scripts and the website" width="900">
+
+The capture dashboards record each sensor into per-subject sessions. The
+sample-data scripts turn sessions, and open datasets while the study’s own
+recordings are unreleased, into static JSON that the website reads. The website
+has no database or server-side secrets.
+
+### Data access flow
+
+<img src="assets/diagrams/data-access-flow.png" alt="A researcher browses previews, requests access, agrees to the data use agreement, is approved and receives a fingerprinted copy" width="900">
 
 ## Screens
 
@@ -314,15 +289,45 @@ variables are needed.
 
 ## Version control
 
-Tracked with Git and hosted on GitHub:
-**https://github.com/h4444n55555/Multimodal-Analysis-Dashboards**
+The project is tracked with Git and hosted on GitHub:
+**https://github.com/h4444n55555/Multimodal-Analysis-Dashboards** (public).
 
-Work happens on `main`, one logical change per commit, so any commit can be
-reverted on its own.
+### Branches
+
+| Branch | Purpose |
+|--------|---------|
+| `main` | The only branch. Stable code, and what the GitHub page and this README show. |
+
+### Commit conventions
+
+- One logical change per commit, so any commit can be reverted on its own.
+- The subject line says what the change does, in the imperative
+  (“Restore capture dashboards and add setup instructions”), not which files
+  changed.
+- Code, docs and screenshots are committed. Virtual environments, caches, logs
+  and the `cvpr-lab/` workspace are not (see `.gitignore`).
+
+### History
+
+| Date | What changed | Commits |
+|------|--------------|---------|
+| 29 Aug 2026 | Initial multimodal biosignal capture dashboards | `93ae1f1` |
+| 29 Sep 2026 | Aura Screen app, evaluation docs and hub launcher; the MMAC website | `6f0081b`, `94b4b25` |
+| 6 Oct 2026 | EMG and rPPG dashboards, website updates, README | `adba7de` … `2ab982f` |
+| 7 Oct 2026 | Initial project documentation | `d494db4` |
+| 31 Oct 2026 | Website prepared for Vercel hosting | `c0d4769` |
+| 2–3 Nov 2026 | README rewritten with setup instructions, diagrams and the data protection proposal; evaluation docs moved out of the repo | `cc47f09` … `1d4ae46` |
+
+Run `git log --oneline` for the full list.
+
+### Getting the code
 
 ```bash
 git clone https://github.com/h4444n55555/Multimodal-Analysis-Dashboards.git
+cd Multimodal-Analysis-Dashboards
 ```
+
+Then follow [Setup and execution](#setup-and-execution).
 
 ## Related project: Aura Screen
 
