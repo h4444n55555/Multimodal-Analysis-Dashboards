@@ -193,6 +193,7 @@ far tail and the Monte-Carlo value is the one to report.
 | Thermal sample-data script only | `ffmpeg` on your `PATH` |
 | SpO2 dashboard only | Silicon Labs CP210x USB driver, and the CMS50E plugged in |
 
+Tested from a fresh clone on Windows 11 with Node 24, Python 3.14 and npm 11.
 Commands below are for Windows PowerShell. On macOS or Linux, use
 `python3` and `source .venv/bin/activate` instead of `.\.venv\Scripts\activate`.
 
@@ -267,7 +268,7 @@ They use different ports, so all three can run at once during a session.
 ```powershell
 # ECG: record 10 minutes from a share link, no browser needed
 cd ECG
-python stream_capture.py 6005748 -d 600 -o morning_session
+python stream_capture.py <share-link-or-id> -d 600 -o morning_session
 
 # SpO2: list ports, record live, check the decoders without a device
 cd ..\SpO2
