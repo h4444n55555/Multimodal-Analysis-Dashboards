@@ -1,6 +1,10 @@
 # MMAC Study Hub
 
-### 🌐 Live website: **https://multimodal-analysis-dashboards.vercel.app/**
+| | |
+|---|---|
+| **Live website** | https://multimodal-analysis-dashboards.vercel.app/ |
+| **Demo video** | https://www.youtube.com/watch?v=e6dh0Q-tbj0 |
+| **Video and slides (Google Drive)** | https://drive.google.com/drive/folders/1_JIU5m7tUj5NBQN36SzoFNGy4ilYeFui |
 
 The public website for the **Multimodal Affective Computing (MMAC) study** at
 IIT Ropar. The study looks at how brief, involuntary facial and body signals
